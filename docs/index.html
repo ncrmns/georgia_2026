@@ -177,6 +177,10 @@
     .action-btn.danger:hover { border-color: var(--red);    color: var(--red); }
     .action-btn.success      { border-color: var(--green);  color: var(--green); }
     .action-btn.advance      { border-color: var(--accent); color: var(--accent); }
+    .action-btn svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; margin-right: 4px; vertical-align: middle; }
+    .modal-close svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; }
+    .pinned-note-del svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.5; }
+    .admin-bar svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; margin-right: 4px; vertical-align: middle; }
 
     /* ── Day separator ── */
     .day-header {
@@ -469,7 +473,7 @@
   </div>
 
   <div class="admin-bar" id="adminBar">
-    <span>⚡ Admin mode</span>
+    <span><i data-lucide="zap"></i>Admin mode</span>
     <button class="add-btn" id="addEventBtn">+ Add event</button>
   </div>
 
@@ -484,7 +488,7 @@
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal" style="position:relative">
     <div class="modal-title" id="modalTitle">Add event</div>
-    <button class="modal-close" id="modalClose">✕</button>
+    <button class="modal-close" id="modalClose"><i data-lucide="x"></i></button>
 
     <div class="field">
       <label>Type</label>
@@ -806,7 +810,7 @@ function typeClass(type) {
 function badgeHtml(ev, now = new Date()) {
   const start = new Date(ev.start_at);
   const end   = ev.end_at ? new Date(ev.end_at) : null;
-  if (ev.status === 'done')    return '<span class="status-badge badge-done">Done ✓</span>';
+  if (ev.status === 'done')    return '<span class="status-badge badge-done">Done</span>';
   if (ev.status === 'skipped') return '<span class="status-badge badge-upcoming">Skipped</span>';
   if (now > (end || start) && ev.status !== 'active')
                                return '<span class="status-badge badge-late">Late</span>';
@@ -867,7 +871,7 @@ function renderPinned() {
   for (const n of notes) {
     html += `<div class="pinned-note">
       <span class="pinned-note-text">${escHtml(n.title)}</span>
-      <button class="pinned-note-del" onclick="deleteNote('${n.id}')">✕</button>
+      <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
     </div>`;
   }
   if (isAdmin) {
@@ -1100,10 +1104,10 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
 
   const adminHtml = `
     <div class="card-actions">
-      <button class="action-btn" onclick="openEdit('${ev.id}')">✏️ Edit</button>
-      <button class="action-btn success" onclick="markDone('${ev.id}')">✓ Done</button>
-      <button class="action-btn advance" onclick="skipAdvance('${ev.id}')">⏭ Skip</button>
-      <button class="action-btn danger" onclick="removeEvent('${ev.id}')">🗑 Remove</button>
+      <button class="action-btn" onclick="openEdit('${ev.id}')"><i data-lucide="pencil"></i>Edit</button>
+      <button class="action-btn success" onclick="markDone('${ev.id}')"><i data-lucide="check"></i>Done</button>
+      <button class="action-btn advance" onclick="skipAdvance('${ev.id}')"><i data-lucide="skip-forward"></i>Skip</button>
+      <button class="action-btn danger" onclick="removeEvent('${ev.id}')"><i data-lucide="trash-2"></i>Remove</button>
     </div>`;
 
   const colorStyle = ev.color ? ` style="--card-color:${ev.color}"` : '';
