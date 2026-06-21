@@ -425,7 +425,7 @@ function demoEvents() {
 const sb = DEMO_MODE ? null : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let events        = [];
-let isAdmin       = false;
+let isAdmin       = localStorage.getItem('georgia_admin') === ADMIN_PASSWORD;
 let editingId     = null;
 let selectedType  = 'activity';
 let selectedIcon  = '📍';
@@ -439,6 +439,7 @@ let refreshTimer  = null;
 document.getElementById('lockBtn').addEventListener('click', () => {
   if (isAdmin) {
     isAdmin = false;
+    localStorage.removeItem('georgia_admin');
     document.getElementById('lockBtn').classList.remove('active');
     document.getElementById('lockBtn').textContent = '🔒';
     document.getElementById('adminBar').classList.remove('visible');
@@ -448,6 +449,7 @@ document.getElementById('lockBtn').addEventListener('click', () => {
     const pw = prompt('Admin password:');
     if (pw === ADMIN_PASSWORD) {
       isAdmin = true;
+      localStorage.setItem('georgia_admin', ADMIN_PASSWORD);
       document.getElementById('lockBtn').classList.add('active');
       document.getElementById('lockBtn').textContent = '🔓';
       document.getElementById('adminBar').classList.add('visible');
@@ -952,6 +954,13 @@ function startRefresh() {
 // ─────────────────────────────────────────────
 // Boot
 // ─────────────────────────────────────────────
+if (isAdmin) {
+  document.getElementById('lockBtn').classList.add('active');
+  document.getElementById('lockBtn').textContent = '🔓';
+  document.getElementById('adminBar').classList.add('visible');
+  document.body.classList.add('is-admin');
+}
+
 loadEvents();
 startTick();
 startRefresh();
