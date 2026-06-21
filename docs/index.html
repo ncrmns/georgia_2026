@@ -410,6 +410,40 @@
     /* ── Countdown ── */
     .countdown { font-size: 13px; color: var(--muted); margin-top: 2px; }
     .countdown strong { color: var(--accent); }
+
+    /* ── Card entrance ── */
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in {
+      opacity: 0;
+      animation: card-in .35s ease forwards;
+    }
+
+    /* ── Progress bar fill ── */
+    @keyframes fill-in {
+      from { width: 0 !important; }
+    }
+    .animate-fill {
+      animation: fill-in .8s cubic-bezier(.4,0,.2,1) forwards;
+    }
+
+    /* ── Done badge pop ── */
+    @keyframes badge-pop {
+      0%   { transform: scale(0.5); opacity: 0; }
+      70%  { transform: scale(1.2); }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    .badge-done { animation: badge-pop .3s ease forwards; }
+
+    /* ── Lock button flip ── */
+    @keyframes lock-flip {
+      0%   { transform: rotateY(0); }
+      50%  { transform: rotateY(90deg); }
+      100% { transform: rotateY(0); }
+    }
+    .lock-flip { animation: lock-flip .3s ease; }
   </style>
 </head>
 <body>
@@ -575,29 +609,34 @@ const sb = DEMO_MODE ? null : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 
 let events        = [];
 let notes         = [];
-let isAdmin = false;
+let isAdmin       = false;
 let editingId     = null;
 let selectedType  = 'activity';
 let selectedIcon  = '📍';
 let selectedVehicle = '🚗';
 let selectedColor = '';
 let refreshTimer  = null;
+let firstLoad     = true;
 
 // ─────────────────────────────────────────────
 // Auth
 // ─────────────────────────────────────────────
 document.getElementById('lockBtn').addEventListener('click', () => {
+  const btn = document.getElementById('lockBtn');
+  btn.classList.remove('lock-flip');
+  void btn.offsetWidth; // reflow to restart animation
+  btn.classList.add('lock-flip');
   if (isAdmin) {
     isAdmin = false;
-    document.getElementById('lockBtn').classList.remove('active');
-    document.getElementById('lockBtn').textContent = '🔒';
+    btn.classList.remove('active');
+    btn.textContent = '🔒';
     document.getElementById('adminBar').classList.remove('visible');
     document.body.classList.remove('is-admin');
     render();
   } else {
     isAdmin = true;
-    document.getElementById('lockBtn').classList.add('active');
-    document.getElementById('lockBtn').textContent = '🔓';
+    btn.classList.add('active');
+    btn.textContent = '🔓';
     document.getElementById('adminBar').classList.add('visible');
     document.body.classList.add('is-admin');
     render();
@@ -774,6 +813,34 @@ function render() {
   renderCurrent();
   renderSchedule();
   lucide.createIcons();
+  if (firstLoad) {
+    animateCardsIn();
+    animateProgressFill();
+    scrollToNow();
+    firstLoad = false;
+  }
+}
+
+function animateCardsIn() {
+  const cards = document.querySelectorAll('.card');
+  cards.forEach((card, i) => {
+    card.classList.add('animate-in');
+    card.style.animationDelay = `${i * 55}ms`;
+  });
+}
+
+function animateProgressFill() {
+  document.querySelectorAll('.progress-fill').forEach(el => {
+    el.classList.add('animate-fill');
+  });
+}
+
+function scrollToNow() {
+  const nowLabel = [...document.querySelectorAll('.section-label')]
+    .find(el => el.textContent.trim() === 'Now');
+  if (nowLabel) {
+    setTimeout(() => nowLabel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400);
+  }
 }
 
 function renderPinned() {
