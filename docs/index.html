@@ -539,10 +539,15 @@ async function loadEvents() {
 }
 
 async function saveEvent(ev) {
+  let error;
   if (ev.id) {
-    await sb.from('events').update(ev).eq('id', ev.id);
+    ({ error } = await sb.from('events').update(ev).eq('id', ev.id));
   } else {
-    await sb.from('events').insert({ ...ev, trip_id: TRIP_ID });
+    ({ error } = await sb.from('events').insert({ ...ev, trip_id: TRIP_ID }));
+  }
+  if (error) {
+    alert(`Save failed: ${error.message}\n\nIf this mentions "icon" or "color", run this in Supabase SQL Editor:\nalter table events add column if not exists icon text;\nalter table events add column if not exists color text;`);
+    return;
   }
   await loadEvents();
 }
