@@ -929,17 +929,27 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
   const colorClass = ev.color ? ' has-color' : '';
   const isTravel = ev.type === 'travel';
   const routeHtml = isTravel ? travelRouteHtml(ev) : '';
-  const titleHtml = isTravel && routeHtml
-    ? '' // route replaces title for travel cards with -> syntax
-    : `<div class="card-title">${escHtml(ev.title)}</div>`;
+
+  if (isTravel && routeHtml) {
+    return `
+    <div class="card ${extraClass}${colorClass}${typeClass2}${highlightClass}"${colorStyle} data-id="${ev.id}">
+      ${routeHtml}
+      <div class="card-meta" style="margin-top:6px">
+        <span class="card-time">${formatTime(ev.start_at)}${end}</span>
+        ${badgeHtml(ev)}${startsInLabel}
+      </div>
+      ${progressHtml}
+      ${notesHtml}
+      ${adminHtml}
+    </div>`;
+  }
 
   return `
     <div class="card ${extraClass}${colorClass}${typeClass2}${highlightClass}"${colorStyle} data-id="${ev.id}">
       <div class="card-header">
         <div class="card-icon ${typeClass(ev.type)}">${eventIcon(ev)}</div>
         <div class="card-body">
-          ${titleHtml}
-          ${routeHtml}
+          <div class="card-title">${escHtml(ev.title)}</div>
           <div class="card-meta">
             <span class="card-time">${formatTime(ev.start_at)}${end}</span>
             ${badgeHtml(ev)}${startsInLabel}
