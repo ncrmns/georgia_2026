@@ -1018,10 +1018,7 @@ function renderCurrent() {
       new Date(ev.start_at) >= now)
     .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
 
-  // If no current event, also show first upcoming from any day as the top "up next"
-  const upNextList = todayUpcoming.length
-    ? todayUpcoming
-    : (ctx.next ? [ctx.next] : []);
+  const upNextList = todayUpcoming;
 
   if (upNextList.length) {
     html += `<div class="section-label">Up next</div>`;
