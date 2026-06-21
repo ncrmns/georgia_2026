@@ -137,6 +137,24 @@
       color: var(--muted); text-transform: uppercase; margin-bottom: 4px;
     }
 
+    /* ── Pinned notes ── */
+    .pinned-notes { margin-bottom: 4px; }
+    .pinned-note {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px; color: var(--muted);
+    }
+    .pinned-note:last-child { border-bottom: none; }
+    .pinned-note-text { flex: 1; }
+    .pinned-note-del {
+      display: none; background: none; border: none;
+      color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px;
+      opacity: 0.5;
+    }
+    .pinned-note-del:hover { opacity: 1; color: var(--red); }
+    .is-admin .pinned-note-del { display: block; }
+
     /* ── Admin actions on card ── */
     .card-actions {
       display: none; gap: 6px; margin-top: 12px; flex-wrap: wrap;
@@ -354,6 +372,7 @@
     <button class="add-btn" id="addEventBtn">+ Add event</button>
   </div>
 
+  <div id="pinnedSection"></div>
   <div id="currentSection"></div>
   <div id="scheduleSection"></div>
 </div>
@@ -482,6 +501,7 @@ function demoEvents() {
 const sb = DEMO_MODE ? null : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let events        = [];
+let notes         = [];
 let isAdmin = false;
 let editingId     = null;
 let selectedType  = 'activity';
@@ -528,7 +548,9 @@ async function loadEvents() {
     .order('start_at', { ascending: true });
 
   if (error) { console.error(error); return; }
-  events = data || [];
+  const all = data || [];
+  notes  = all.filter(e => e.type === 'note');
+  events = all.filter(e => e.type !== 'note');
   render();
 }
 
@@ -644,8 +666,32 @@ function badgeHtml(ev, now = new Date()) {
 // ─────────────────────────────────────────────
 function render() {
   renderHeader();
+  renderPinned();
   renderCurrent();
   renderSchedule();
+}
+
+function renderPinned() {
+  const el = document.getElementById('pinnedSection');
+  if (!notes.length && !isAdmin) { el.innerHTML = ''; return; }
+
+  let html = '<div class="pinned-notes">';
+  for (const n of notes) {
+    html += `<div class="pinned-note">
+      <span class="pinned-note-text">${escHtml(n.title)}</span>
+      <button class="pinned-note-del" onclick="deleteNote('${n.id}')">✕</button>
+    </div>`;
+  }
+  if (isAdmin) {
+    html += `<div class="pinned-note" id="addNoteRow">
+      <input id="noteInput" type="text" placeholder="Add a note…"
+        style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit;"
+        onkeydown="if(event.key==='Enter')saveNote()" />
+      <button class="pinned-note-del" style="display:block;opacity:1;color:var(--muted)" onclick="saveNote()">↵</button>
+    </div>`;
+  }
+  html += '</div>';
+  el.innerHTML = html;
 }
 
 function renderHeader() {
@@ -798,6 +844,19 @@ function escHtml(str) {
 // ─────────────────────────────────────────────
 // Admin actions (called from inline onclick)
 // ─────────────────────────────────────────────
+window.saveNote = async () => {
+  const input = document.getElementById('noteInput');
+  const text = input?.value.trim();
+  if (!text) return;
+  await sb.from('events').insert({ trip_id: TRIP_ID, type: 'note', title: text, start_at: new Date().toISOString(), status: 'upcoming' });
+  await loadEvents();
+};
+
+window.deleteNote = async (id) => {
+  await sb.from('events').delete().eq('id', id);
+  await loadEvents();
+};
+
 window.markDone    = (id) => setStatus(id, 'done');
 window.skipAdvance = (id) => setStatus(id, 'skipped');
 window.removeEvent = async (id) => {
