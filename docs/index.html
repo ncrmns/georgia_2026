@@ -962,20 +962,34 @@ function renderPastDays() {
   bindCardActions(el);
 }
 
-// Today's already-finished events — shown faded above NOW, no day title
+// Today's day header + already-finished events above NOW
 function renderTodayPast() {
   const el  = document.getElementById('todayPastSection');
   const now = new Date();
   const ctx = scheduleContext();
   const currentId = ctx.current?.id;
-  const todayPast = events
-    .filter(ev => sameDay(new Date(ev.start_at), now) &&
-      new Date(ev.end_at || ev.start_at) < now &&
-      ev.id !== currentId)
+
+  // Find all today's events to decide whether to show header at all
+  const todayAll = events.filter(ev => sameDay(new Date(ev.start_at), now));
+  if (!todayAll.length) { el.innerHTML = ''; return; }
+
+  const todayPast = todayAll
+    .filter(ev => new Date(ev.end_at || ev.start_at) < now && ev.id !== currentId)
     .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
-  if (!todayPast.length) { el.innerHTML = ''; return; }
-  let html = '';
+
+  // Day band index: count how many past-day groups precede today
+  const groups = groupByDay(events);
+  const pastDayCount = Object.values(groups).filter(evs =>
+    evs.every(ev => new Date(ev.end_at || ev.start_at) < now) &&
+    !sameDay(new Date(evs[0].start_at), now)
+  ).length;
+  const bandClass = `day-band-${Math.min(pastDayCount, 3)}`;
+
+  let html = `<div class="${bandClass}">`;
+  html += `<div class="day-header">${formatDay(now.toISOString())}</div>`;
   for (const ev of todayPast) html += eventCardHtml(ev, 'done', false, false);
+  html += `</div>`;
+
   el.innerHTML = html;
   bindCardActions(el);
 }
@@ -1036,7 +1050,7 @@ function renderSchedule() {
 
   if (!futureDayGroups.length) { el.innerHTML = ''; return; }
 
-  let html = `<div class="section-label">Full schedule</div>`;
+  let html = '';
   futureDayGroups.forEach(([day, evs], i) => { html += dayBandHtml(day, evs, false, i); });
 
   el.innerHTML = html;
