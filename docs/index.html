@@ -683,11 +683,14 @@ function renderPinned() {
     </div>`;
   }
   if (isAdmin) {
-    html += `<div class="pinned-note" id="addNoteRow">
+    html += `<div class="pinned-note" id="addNoteRow" style="gap:6px">
       <input id="noteInput" type="text" placeholder="Add a note…"
         style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit;"
         onkeydown="if(event.key==='Enter')saveNote()" />
-      <button class="pinned-note-del" style="display:block;opacity:1;color:var(--muted)" onclick="saveNote()">↵</button>
+      <button onclick="saveNote()"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+        Add
+      </button>
     </div>`;
   }
   html += '</div>';
@@ -1068,9 +1071,13 @@ function startTick() {
   }, 10000); // every 10s
 }
 
-// Reload data every 30s
+// Reload data every 30s, but skip if the note input is focused
 function startRefresh() {
-  refreshTimer = setInterval(loadEvents, 30000);
+  refreshTimer = setInterval(() => {
+    const input = document.getElementById('noteInput');
+    if (input && document.activeElement === input) return;
+    loadEvents();
+  }, 30000);
 }
 
 // ─────────────────────────────────────────────
