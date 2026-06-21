@@ -124,8 +124,20 @@
     .progress-fill {
       height: 100%; border-radius: 2px;
       background: var(--accent); transition: width .5s ease;
+      animation: bar-glow 4s ease-in-out infinite;
     }
-    .progress-fill.late { background: var(--red); }
+    .progress-fill.late {
+      background: var(--red);
+      animation: bar-glow-late 4s ease-in-out infinite;
+    }
+    @keyframes bar-glow {
+      0%, 100% { filter: drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 40%, transparent)); }
+      50%       { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 80%, transparent)); }
+    }
+    @keyframes bar-glow-late {
+      0%, 100% { filter: drop-shadow(0 0 2px color-mix(in srgb, var(--red) 40%, transparent)); }
+      50%       { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--red) 80%, transparent)); }
+    }
     .progress-labels {
       display: flex; justify-content: space-between;
       margin-top: 4px;
