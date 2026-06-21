@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Georgia 2026</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     /* ── Reset & base ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -86,6 +87,10 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 16px; flex-shrink: 0; margin-top: 1px;
     }
+    .card-icon svg { width: 16px; height: 16px; stroke-width: 2; }
+    .icon-deadline svg { stroke: var(--orange); }
+    .icon-travel   svg { stroke: var(--accent); }
+    .icon-activity svg { stroke: var(--purple); }
     .icon-deadline { background: rgba(255,159,10,.15); }
     .icon-travel   { background: rgba(79,142,247,.15); }
     .icon-activity { background: rgba(191,90,242,.15); }
@@ -231,17 +236,22 @@
       transition: all .15s;
     }
     .type-option.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-    .type-icon-lbl { font-size: 20px; display: block; margin-bottom: 4px; }
+    .type-icon-lbl { font-size: 20px; display: flex; justify-content: center; margin-bottom: 4px; }
+    .type-icon-lbl svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.75; }
+    .type-option.selected .type-icon-lbl svg { stroke: var(--accent); }
+    .type-option:not(.selected) .type-icon-lbl svg { stroke: var(--muted); }
 
     /* ── Icon picker ── */
     .icon-picker { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .icon-quick {
-      font-size: 22px; width: 40px; height: 40px; border-radius: var(--radius-sm);
+      font-size: 20px; width: 40px; height: 40px; border-radius: var(--radius-sm);
       border: 1px solid var(--border); background: var(--surface2);
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; transition: border-color .15s;
     }
     .icon-quick:hover, .icon-quick.selected { border-color: var(--accent); background: var(--accent-dim); }
+    .icon-quick svg { width: 18px; height: 18px; stroke: var(--muted); stroke-width: 1.75; }
+    .icon-quick.selected svg, .icon-quick:hover svg { stroke: var(--accent); }
     .icon-custom-input {
       flex: 1; min-width: 60px; background: var(--surface2); border: 1px solid var(--border);
       color: var(--text); border-radius: var(--radius-sm); padding: 8px 10px;
@@ -259,6 +269,8 @@
     }
     .vehicle-opt.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
     .vehicle-opt span { font-size: 22px; display: block; margin-bottom: 3px; }
+    .vehicle-opt svg { width: 22px; height: 22px; stroke: var(--muted); stroke-width: 1.75; display: block; margin: 0 auto 3px; }
+    .vehicle-opt.selected svg, .vehicle-opt:hover svg { stroke: var(--accent); }
 
     /* ── Color accent picker ── */
     .color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -389,7 +401,8 @@
       margin-top: 6px; font-size: 13px;
     }
     .travel-city { font-weight: 600; color: var(--text); }
-    .travel-arrow { color: var(--muted); font-size: 16px; flex: 1; text-align: center; letter-spacing: 2px; }
+    .travel-arrow { color: var(--muted); font-size: 16px; flex: 1; text-align: center; letter-spacing: 2px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+    .travel-arrow svg { width: 16px; height: 16px; stroke: var(--muted); stroke-width: 1.75; flex-shrink: 0; }
 
     /* ── Refresh indicator ── */
     .refresh-dot {
@@ -440,13 +453,13 @@
       <label>Type</label>
       <div class="type-picker">
         <div class="type-option selected" data-type="activity">
-          <span class="type-icon-lbl">📍</span>Activity
+          <span class="type-icon-lbl"><i data-lucide="map-pin"></i></span>Activity
         </div>
         <div class="type-option" data-type="deadline">
-          <span class="type-icon-lbl">⏰</span>Deadline
+          <span class="type-icon-lbl"><i data-lucide="clock"></i></span>Deadline
         </div>
         <div class="type-option" data-type="travel">
-          <span class="type-icon-lbl">🚗</span>Travel
+          <span class="type-icon-lbl"><i data-lucide="navigation"></i></span>Travel
         </div>
       </div>
     </div>
@@ -455,10 +468,10 @@
     <div class="field" id="vehicleField" style="display:none">
       <label>Vehicle</label>
       <div class="vehicle-picker">
-        <div class="vehicle-opt selected" data-vehicle="🚗"><span>🚗</span>Drive</div>
-        <div class="vehicle-opt" data-vehicle="✈️"><span>✈️</span>Plane</div>
-        <div class="vehicle-opt" data-vehicle="🛶"><span>🛶</span>Raft</div>
-        <div class="vehicle-opt" data-vehicle="🏍️"><span>🏍️</span>ATV</div>
+        <div class="vehicle-opt selected" data-vehicle="car"><i data-lucide="car"></i>Drive</div>
+        <div class="vehicle-opt" data-vehicle="plane"><i data-lucide="plane"></i>Plane</div>
+        <div class="vehicle-opt" data-vehicle="sailboat"><i data-lucide="sailboat"></i>Raft</div>
+        <div class="vehicle-opt" data-vehicle="bike"><i data-lucide="bike"></i>ATV</div>
       </div>
     </div>
 
@@ -466,17 +479,19 @@
     <div class="field" id="iconField">
       <label>Icon</label>
       <div class="icon-picker">
-        <div class="icon-quick selected" data-icon="📍">📍</div>
-        <div class="icon-quick" data-icon="🍷">🍷</div>
-        <div class="icon-quick" data-icon="🍽️">🍽️</div>
-        <div class="icon-quick" data-icon="🏛️">🏛️</div>
-        <div class="icon-quick" data-icon="🏊">🏊</div>
-        <div class="icon-quick" data-icon="🎵">🎵</div>
-        <div class="icon-quick" data-icon="🛏️">🛏️</div>
-        <div class="icon-quick" data-icon="⏰">⏰</div>
-        <input class="icon-custom-input" id="fIcon" maxlength="2" placeholder="✏️" title="Or type any emoji" />
+        <div class="icon-quick selected" data-icon="map-pin"><i data-lucide="map-pin"></i></div>
+        <div class="icon-quick" data-icon="utensils"><i data-lucide="utensils"></i></div>
+        <div class="icon-quick" data-icon="wine"><i data-lucide="wine"></i></div>
+        <div class="icon-quick" data-icon="landmark"><i data-lucide="landmark"></i></div>
+        <div class="icon-quick" data-icon="mountain"><i data-lucide="mountain"></i></div>
+        <div class="icon-quick" data-icon="waves"><i data-lucide="waves"></i></div>
+        <div class="icon-quick" data-icon="music"><i data-lucide="music"></i></div>
+        <div class="icon-quick" data-icon="bed-double"><i data-lucide="bed-double"></i></div>
+        <div class="icon-quick" data-icon="clock"><i data-lucide="clock"></i></div>
+        <div class="icon-quick" data-icon="camera"><i data-lucide="camera"></i></div>
+        <input class="icon-custom-input" id="fIcon" maxlength="2" placeholder="😀" title="Or type any emoji" />
       </div>
-      <div class="icon-custom-hint">Tap a quick icon or type any emoji in the box →</div>
+      <div class="icon-custom-hint">Tap an icon above or type any emoji →</div>
     </div>
 
     <div class="field">
@@ -727,9 +742,25 @@ function formatDay(iso) {
   return new Date(iso).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
+const LUCIDE_NAMES = new Set([
+  'map-pin','utensils','wine','landmark','mountain','waves','music','bed-double',
+  'clock','camera','car','plane','sailboat','bike','navigation','flag','bell',
+  'star','heart','zap','sun','coffee','shopping-bag','briefcase','compass',
+]);
+
+function isLucide(icon) {
+  return icon && LUCIDE_NAMES.has(icon);
+}
+
+function iconHtml(icon, cssClass = '') {
+  if (!icon) return '';
+  if (isLucide(icon)) return `<i data-lucide="${icon}"${cssClass ? ` class="${cssClass}"` : ''}></i>`;
+  return `<span>${icon}</span>`;
+}
+
 function eventIcon(ev) {
-  if (ev.type === 'travel') return ev.icon || '🚗';
-  return ev.icon || (ev.type === 'deadline' ? '⏰' : '📍');
+  if (ev.type === 'travel') return ev.icon || 'car';
+  return ev.icon || (ev.type === 'deadline' ? 'clock' : 'map-pin');
 }
 
 function typeClass(type) {
@@ -755,6 +786,7 @@ function render() {
   renderPinned();
   renderCurrent();
   renderSchedule();
+  lucide.createIcons();
 }
 
 function renderPinned() {
@@ -880,9 +912,12 @@ function travelRouteHtml(ev) {
   const parts = ev.title.split(/\s*->\s*/);
   if (parts.length < 2) return '';
   const icon = eventIcon(ev);
+  const arrowIcon = isLucide(icon)
+    ? `·· ${iconHtml(icon)} ··`
+    : `··${icon}··`;
   return `<div class="travel-route">
     <span class="travel-city">${escHtml(parts[0])}</span>
-    <span class="travel-arrow">··${icon}··</span>
+    <span class="travel-arrow">${arrowIcon}</span>
     <span class="travel-city">${escHtml(parts.slice(1).join(' → '))}</span>
   </div>`;
 }
@@ -949,7 +984,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
   return `
     <div class="card ${extraClass}${colorClass}${typeClass2}${highlightClass}"${colorStyle} data-id="${ev.id}">
       <div class="card-header">
-        <div class="card-icon ${typeClass(ev.type)}">${eventIcon(ev)}</div>
+        <div class="card-icon ${typeClass(ev.type)}">${iconHtml(eventIcon(ev))}</div>
         <div class="card-body">
           <div class="card-title">${escHtml(ev.title)}</div>
           <div class="card-meta">
@@ -1010,6 +1045,7 @@ window.openEdit = (id) => {
   populateForm(ev);
   document.getElementById('modalTitle').textContent = 'Edit event';
   document.getElementById('modalOverlay').classList.add('open');
+  lucide.createIcons();
 };
 
 document.getElementById('addEventBtn').addEventListener('click', () => {
@@ -1017,6 +1053,7 @@ document.getElementById('addEventBtn').addEventListener('click', () => {
   resetForm();
   document.getElementById('modalTitle').textContent = 'Add event';
   document.getElementById('modalOverlay').classList.add('open');
+  lucide.createIcons();
 });
 
 document.getElementById('modalClose').addEventListener('click', closeModal);
@@ -1048,6 +1085,7 @@ function updateFormForType() {
   document.getElementById('iconField').style.display    = isTravel ? 'none' : '';
   document.getElementById('routeField').style.display   = isTravel ? '' : 'none';
   document.getElementById('titleField').style.display   = isTravel ? 'none' : '';
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 // Vehicle picker
@@ -1100,7 +1138,7 @@ function fromLocalInput(val) {
 }
 
 function setSelectedIcon(icon) {
-  selectedIcon = icon || '📍';
+  selectedIcon = icon || 'map-pin';
   document.querySelectorAll('.icon-quick').forEach(o => {
     o.classList.toggle('selected', o.dataset.icon === selectedIcon);
   });
@@ -1110,7 +1148,7 @@ function setSelectedIcon(icon) {
 }
 
 function setSelectedVehicle(icon) {
-  selectedVehicle = icon || '🚗';
+  selectedVehicle = icon || 'car';
   document.querySelectorAll('.vehicle-opt').forEach(o => {
     o.classList.toggle('selected', o.dataset.vehicle === selectedVehicle);
   });
@@ -1133,7 +1171,7 @@ function populateForm(ev) {
   if (selectedType === 'travel') {
     setSelectedVehicle(ev.icon);
   } else {
-    setSelectedIcon(ev.icon || (selectedType === 'deadline' ? '⏰' : '📍'));
+    setSelectedIcon(ev.icon || (selectedType === 'deadline' ? 'clock' : 'map-pin'));
   }
   setSelectedColor(ev.color);
 
@@ -1158,8 +1196,8 @@ function resetForm() {
     o.classList.toggle('selected', o.dataset.type === 'activity');
   });
   updateFormForType();
-  setSelectedIcon('📍');
-  setSelectedVehicle('🚗');
+  setSelectedIcon('map-pin');
+  setSelectedVehicle('car');
   setSelectedColor('');
   document.getElementById('fTitle').value = '';
   document.getElementById('fFrom').value  = '';
