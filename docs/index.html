@@ -186,6 +186,13 @@
     .day-header::after {
       content: ''; flex: 1; height: 1px; background: var(--border);
     }
+    .day-header.collapsible { cursor: pointer; user-select: none; }
+    .day-header.collapsible:hover { opacity: .8; }
+    .day-chevron { margin-left: 2px; transition: transform .25s ease; flex-shrink: 0; }
+    .day-chevron svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; }
+    .day-header.collapsed .day-chevron { transform: rotate(-90deg); }
+    .day-cards { overflow: hidden; }
+    .day-cards.collapsed { display: none; }
 
     /* ── Empty state ── */
     .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
@@ -943,18 +950,26 @@ function renderSchedule() {
 
   let html = `<div class="section-label">Full schedule</div>`;
   let dayIdx = 0;
+  const now = new Date();
   for (const [day, dayEvents] of Object.entries(groups)) {
     const bandClass = `day-band-${Math.min(dayIdx, 3)}`;
+    const dayIsPast = dayEvents.every(ev => new Date(ev.end_at || ev.start_at) < now);
+    const collapsedClass = dayIsPast ? ' collapsed' : '';
+    const safeDay = day.replace(/'/g, "\\'");
     html += `<div class="${bandClass}">`;
-    html += `<div class="day-header">${day}</div>`;
+    html += `<div class="day-header collapsible${collapsedClass}" onclick="toggleDay(this)">
+      ${day}
+      <span class="day-chevron"><i data-lucide="chevron-down"></i></span>
+    </div>`;
+    html += `<div class="day-cards${collapsedClass}">`;
     for (const ev of dayEvents) {
       const isDone = ev.status === 'done' || ev.status === 'skipped';
-      const isPast = !isDone && new Date(ev.end_at || ev.start_at) < new Date();
-      const isUpcoming = !isDone && !isPast && new Date(ev.start_at) > new Date();
+      const isPast = !isDone && new Date(ev.end_at || ev.start_at) < now;
+      const isUpcoming = !isDone && !isPast && new Date(ev.start_at) > now;
       const extraClass = isDone || isPast ? 'done' : '';
       html += eventCardHtml(ev, extraClass, false, isUpcoming);
     }
-    html += `</div>`;
+    html += `</div></div>`;
     dayIdx++;
   }
 
@@ -1054,6 +1069,11 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
 function bindCardActions(el) {
   // actions are bound via inline onclick — nothing extra needed
 }
+
+window.toggleDay = (header) => {
+  header.classList.toggle('collapsed');
+  header.nextElementSibling.classList.toggle('collapsed');
+};
 
 function escHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
