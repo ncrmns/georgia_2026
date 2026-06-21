@@ -339,6 +339,58 @@
       box-shadow: 0 0 10px rgba(255,159,10,.3);
     }
 
+    /* ── Day color bands ── */
+    :root {
+      --day0: #4f8ef7; /* blue  – day 1 */
+      --day1: #ff9f0a; /* amber – day 2 */
+      --day2: #34c759; /* green – day 3 */
+      --day3: #bf5af2; /* purple – day 4+ */
+    }
+    .day-band-0 .day-header { color: var(--day0); }
+    .day-band-0 .day-header::after { background: color-mix(in srgb, var(--day0) 30%, transparent); }
+    .day-band-1 .day-header { color: var(--day1); }
+    .day-band-1 .day-header::after { background: color-mix(in srgb, var(--day1) 30%, transparent); }
+    .day-band-2 .day-header { color: var(--day2); }
+    .day-band-2 .day-header::after { background: color-mix(in srgb, var(--day2) 30%, transparent); }
+    .day-band-3 .day-header { color: var(--day3); }
+    .day-band-3 .day-header::after { background: color-mix(in srgb, var(--day3) 30%, transparent); }
+    .day-band-0 .card:not(.has-color) { border-left: 2px solid color-mix(in srgb, var(--day0) 35%, transparent); }
+    .day-band-1 .card:not(.has-color) { border-left: 2px solid color-mix(in srgb, var(--day1) 35%, transparent); }
+    .day-band-2 .card:not(.has-color) { border-left: 2px solid color-mix(in srgb, var(--day2) 35%, transparent); }
+    .day-band-3 .card:not(.has-color) { border-left: 2px solid color-mix(in srgb, var(--day3) 35%, transparent); }
+
+    /* ── Type-specific card borders ── */
+    .card.type-travel   { border-style: dashed; }
+    .card.type-deadline { border-left-width: 3px; border-left-color: var(--orange); }
+
+    /* ── Status visual: NOW glow, past fade ── */
+    .card.current {
+      box-shadow: 0 0 0 1px var(--accent), 0 0 18px -4px color-mix(in srgb, var(--accent) 50%, transparent);
+      animation: glow-pulse 3s ease-in-out infinite;
+    }
+    @keyframes glow-pulse {
+      0%, 100% { box-shadow: 0 0 0 1px var(--accent), 0 0 18px -4px color-mix(in srgb, var(--accent) 50%, transparent); }
+      50%       { box-shadow: 0 0 0 1px var(--accent), 0 0 28px -2px color-mix(in srgb, var(--accent) 70%, transparent); }
+    }
+    .card.done   { opacity: .35; filter: saturate(.4); }
+    .card.dimmed { opacity: .5;  filter: saturate(.5); }
+
+    /* ── Highlight badge ── */
+    .card.is-highlight .card-icon {
+      width: 40px; height: 40px; font-size: 20px;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--card-color, var(--accent)) 40%, transparent);
+    }
+    .highlight-toggle { font-size: 11px; cursor: pointer; opacity: .5; transition: opacity .15s; }
+    .highlight-toggle:hover, .card.is-highlight .highlight-toggle { opacity: 1; }
+
+    /* ── Travel card route display ── */
+    .travel-route {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 6px; font-size: 13px;
+    }
+    .travel-city { font-weight: 600; color: var(--text); }
+    .travel-arrow { color: var(--muted); font-size: 16px; flex: 1; text-align: center; letter-spacing: 2px; }
+
     /* ── Refresh indicator ── */
     .refresh-dot {
       width: 6px; height: 6px; border-radius: 50%;
@@ -574,6 +626,17 @@ async function deleteEvent(id) {
   await loadEvents();
 }
 
+window.toggleHighlight = async (id) => {
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  const { error } = await sb.from('events').update({ is_highlight: !ev.is_highlight }).eq('id', id);
+  if (error) {
+    alert(`Run this in Supabase SQL Editor:\nalter table events add column if not exists is_highlight boolean default false;`);
+    return;
+  }
+  await loadEvents();
+};
+
 async function setStatus(id, status) {
   await sb.from('events').update({ status }).eq('id', id);
   await loadEvents();
@@ -781,17 +844,33 @@ function renderSchedule() {
   }
 
   let html = `<div class="section-label">Full schedule</div>`;
+  let dayIdx = 0;
   for (const [day, dayEvents] of Object.entries(groups)) {
+    const bandClass = `day-band-${Math.min(dayIdx, 3)}`;
+    html += `<div class="${bandClass}">`;
     html += `<div class="day-header">${day}</div>`;
     for (const ev of dayEvents) {
       const isDone = ev.status === 'done' || ev.status === 'skipped';
       const isUpcoming = !isDone && new Date(ev.start_at) > new Date();
       html += eventCardHtml(ev, isDone ? 'done' : '', false, isUpcoming);
     }
+    html += `</div>`;
+    dayIdx++;
   }
 
   el.innerHTML = html;
   bindCardActions(el);
+}
+
+function travelRouteHtml(ev) {
+  const parts = ev.title.split(/\s*->\s*/);
+  if (parts.length < 2) return '';
+  const icon = eventIcon(ev);
+  return `<div class="travel-route">
+    <span class="travel-city">${escHtml(parts[0])}</span>
+    <span class="travel-arrow">··${icon}··</span>
+    <span class="travel-city">${escHtml(parts.slice(1).join(' → '))}</span>
+  </div>`;
 }
 
 function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn = false) {
@@ -800,6 +879,8 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
   const isLate = new Date() > new Date(ev.end_at || ev.start_at) && ev.status !== 'done';
   const startsInMs = new Date(ev.start_at) - new Date();
   const startsInLabel = showStartsIn && startsInMs > 0 ? `<span class="starts-in">in ${formatTimeLeft(startsInMs).replace(' left','')}</span>` : '';
+  const typeClass2 = ev.type === 'travel' ? ' type-travel' : ev.type === 'deadline' ? ' type-deadline' : '';
+  const highlightClass = ev.is_highlight ? ' is-highlight' : '';
 
   let progressHtml = '';
   if (showProgress && p !== null) {
@@ -828,17 +909,25 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
       <button class="action-btn" onclick="openEdit('${ev.id}')">✏️ Edit</button>
       <button class="action-btn success" onclick="markDone('${ev.id}')">✓ Done</button>
       <button class="action-btn advance" onclick="skipAdvance('${ev.id}')">⏭ Skip</button>
+      <button class="action-btn ${ev.is_highlight ? 'success' : ''}" onclick="toggleHighlight('${ev.id}')">${ev.is_highlight ? '★ Highlighted' : '☆ Highlight'}</button>
       <button class="action-btn danger" onclick="removeEvent('${ev.id}')">🗑 Remove</button>
     </div>`;
 
   const colorStyle = ev.color ? ` style="--card-color:${ev.color}"` : '';
   const colorClass = ev.color ? ' has-color' : '';
+  const isTravel = ev.type === 'travel';
+  const routeHtml = isTravel ? travelRouteHtml(ev) : '';
+  const titleHtml = isTravel && routeHtml
+    ? '' // route replaces title for travel cards with -> syntax
+    : `<div class="card-title">${escHtml(ev.title)}</div>`;
+
   return `
-    <div class="card ${extraClass}${colorClass}"${colorStyle} data-id="${ev.id}">
+    <div class="card ${extraClass}${colorClass}${typeClass2}${highlightClass}"${colorStyle} data-id="${ev.id}">
       <div class="card-header">
         <div class="card-icon ${typeClass(ev.type)}">${eventIcon(ev)}</div>
         <div class="card-body">
-          <div class="card-title">${escHtml(ev.title)}</div>
+          ${titleHtml}
+          ${routeHtml}
           <div class="card-meta">
             <span class="card-time">${formatTime(ev.start_at)}${end}</span>
             ${badgeHtml(ev)}${startsInLabel}
