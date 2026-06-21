@@ -47,6 +47,7 @@
       font-size: 16px; cursor: pointer; transition: all .15s; flex-shrink: 0;
     }
     .lock-btn:hover, .lock-btn.active { color: var(--accent); border-color: var(--accent); }
+    .lock-btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; }
 
     /* ── Admin bar ── */
     .admin-bar {
@@ -463,7 +464,7 @@
         <div class="trip-date" id="tripDate"></div>
         <div class="countdown" id="countdown"></div>
       </div>
-      <button class="lock-btn" id="lockBtn" title="Admin login">🔒</button>
+      <button class="lock-btn" id="lockBtn" title="Admin login"><i data-lucide="lock"></i></button>
     </div>
   </div>
 
@@ -636,14 +637,14 @@ document.getElementById('lockBtn').addEventListener('click', () => {
   if (isAdmin) {
     isAdmin = false;
     btn.classList.remove('active');
-    btn.textContent = '🔒';
+    btn.innerHTML = '<i data-lucide="lock"></i>'; lucide.createIcons();
     document.getElementById('adminBar').classList.remove('visible');
     document.body.classList.remove('is-admin');
     render();
   } else {
     isAdmin = true;
     btn.classList.add('active');
-    btn.textContent = '🔓';
+    btn.innerHTML = '<i data-lucide="lock-open"></i>'; lucide.createIcons();
     document.getElementById('adminBar').classList.add('visible');
     document.body.classList.add('is-admin');
     render();
@@ -1348,6 +1349,7 @@ function startRefresh() {
 loadEvents();
 startTick();
 startRefresh();
+lucide.createIcons();
 </script>
 </body>
 </html>
