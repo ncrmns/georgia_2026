@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Georgia 2026</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0c0c0e;
+      --surface:    #1a1a1f;
+      --surface2:   #242429;
+      --border:     #2e2e35;
+      --text:       #f0f0f5;
+      --muted:      #6b6b78;
+      --accent:     #4f8ef7;
+      --accent-dim: #1e3a6e;
+      --green:      #34c759;
+      --orange:     #ff9f0a;
+      --red:        #ff453a;
+      --purple:     #bf5af2;
+      --radius:     14px;
+      --radius-sm:  8px;
+    }
+
+    html { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 16px; }
+    body { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+
+    /* ── Layout ── */
+    .app { max-width: 480px; margin: 0 auto; padding: 0 16px 100px; }
+
+    /* ── Header ── */
+    .header { padding: 52px 0 24px; display: flex; flex-direction: column; gap: 4px; }
+    .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .trip-title { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+    .trip-date  { font-size: 14px; color: var(--muted); margin-top: 2px; }
+    .lock-btn   {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--muted); border-radius: 50%; width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; cursor: pointer; transition: all .15s; flex-shrink: 0;
+    }
+    .lock-btn:hover, .lock-btn.active { color: var(--accent); border-color: var(--accent); }
+
+    /* ── Admin bar ── */
+    .admin-bar {
+      background: var(--accent-dim); border: 1px solid var(--accent);
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; display: none;
+    }
+    .admin-bar.visible { display: flex; }
+    .admin-bar span { font-size: 13px; color: var(--accent); font-weight: 600; }
+    .add-btn {
+      background: var(--accent); color: #fff; border: none;
+      border-radius: var(--radius-sm); padding: 6px 14px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+
+    /* ── Section labels ── */
+    .section-label {
+      font-size: 11px; font-weight: 700; letter-spacing: .8px;
+      color: var(--muted); text-transform: uppercase; margin: 24px 0 10px;
+    }
+
+    /* ── Event cards ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+      position: relative; transition: border-color .2s;
+    }
+    .card + .card { margin-top: 8px; }
+    .card.current  { border-color: var(--accent); background: #111827; }
+    .card.late     { border-color: var(--red); }
+    .card.done     { opacity: .5; }
+    .card.dimmed   { opacity: .6; }
+
+    .card-header { display: flex; align-items: flex-start; gap: 10px; }
+    .card-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0; margin-top: 1px;
+    }
+    .icon-deadline { background: rgba(255,159,10,.15); }
+    .icon-travel   { background: rgba(79,142,247,.15); }
+    .icon-activity { background: rgba(191,90,242,.15); }
+
+    .card-body { flex: 1; min-width: 0; }
+    .card-title {
+      font-size: 16px; font-weight: 600; line-height: 1.3;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .card.current .card-title { font-size: 18px; }
+
+    .card-meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; flex-wrap: wrap; }
+    .card-time { font-size: 13px; color: var(--muted); }
+    .status-badge {
+      font-size: 11px; font-weight: 700; padding: 2px 7px;
+      border-radius: 20px; letter-spacing: .3px;
+    }
+    .badge-late     { background: rgba(255,69,58,.2);  color: var(--red); }
+    .badge-done     { background: rgba(52,199,89,.2);  color: var(--green); }
+    .badge-active   { background: rgba(79,142,247,.2); color: var(--accent); }
+    .badge-upcoming { background: var(--surface2);     color: var(--muted); }
+
+    /* ── Progress bar ── */
+    .progress-wrap { margin-top: 12px; }
+    .progress-track {
+      height: 4px; background: var(--surface2);
+      border-radius: 2px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 2px;
+      background: var(--accent); transition: width .5s ease;
+    }
+    .progress-fill.late { background: var(--red); }
+    .progress-labels {
+      display: flex; justify-content: space-between;
+      margin-top: 4px;
+    }
+    .progress-labels span { font-size: 11px; color: var(--muted); }
+
+    /* ── Notes ── */
+    .card-notes {
+      margin-top: 12px; padding: 10px 12px;
+      background: var(--surface2); border-radius: var(--radius-sm);
+      font-size: 13px; color: var(--text); line-height: 1.5;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .card-notes-label {
+      font-size: 10px; font-weight: 700; letter-spacing: .5px;
+      color: var(--muted); text-transform: uppercase; margin-bottom: 4px;
+    }
+
+    /* ── Admin actions on card ── */
+    .card-actions {
+      display: none; gap: 6px; margin-top: 12px; flex-wrap: wrap;
+    }
+    .is-admin .card-actions { display: flex; }
+    .action-btn {
+      font-size: 12px; font-weight: 600; padding: 5px 11px;
+      border-radius: var(--radius-sm); border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text); cursor: pointer;
+      transition: all .15s;
+    }
+    .action-btn:hover        { border-color: var(--accent); color: var(--accent); }
+    .action-btn.danger:hover { border-color: var(--red);    color: var(--red); }
+    .action-btn.success      { border-color: var(--green);  color: var(--green); }
+    .action-btn.advance      { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Day separator ── */
+    .day-header {
+      font-size: 12px; font-weight: 700; letter-spacing: .5px;
+      color: var(--muted); text-transform: uppercase;
+      padding: 20px 0 8px; display: flex; align-items: center; gap: 10px;
+    }
+    .day-header::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty p { font-size: 15px; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.7);
+      display: none; align-items: flex-end; justify-content: center;
+      z-index: 100; padding: 0;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 24px 20px 40px; width: 100%; max-width: 480px;
+      max-height: 90dvh; overflow-y: auto;
+    }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+    .modal-close {
+      position: absolute; top: 16px; right: 16px;
+      background: var(--surface2); border: none; color: var(--muted);
+      border-radius: 50%; width: 28px; height: 28px; font-size: 16px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Form ── */
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+    .field input, .field select, .field textarea {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius-sm); padding: 10px 12px;
+      font-size: 15px; outline: none; font-family: inherit;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--accent);
+    }
+    .field textarea { min-height: 80px; resize: vertical; }
+    .field select option { background: var(--surface2); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .type-picker { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .type-option {
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 10px 8px; text-align: center; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      transition: all .15s;
+    }
+    .type-option.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .type-icon-lbl { font-size: 20px; display: block; margin-bottom: 4px; }
+
+    .save-btn {
+      width: 100%; background: var(--accent); color: #fff; border: none;
+      border-radius: var(--radius-sm); padding: 14px; font-size: 16px;
+      font-weight: 700; cursor: pointer; margin-top: 8px;
+    }
+    .save-btn:disabled { opacity: .4; cursor: default; }
+
+    /* ── Refresh indicator ── */
+    .refresh-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); display: inline-block; margin-left: 6px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: .3; }
+    }
+
+    /* ── Countdown ── */
+    .countdown { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .countdown strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="trip-title" id="tripTitle">Loading…</div>
+        <div class="trip-date" id="tripDate"></div>
+        <div class="countdown" id="countdown"></div>
+      </div>
+      <button class="lock-btn" id="lockBtn" title="Admin login">🔒</button>
+    </div>
+  </div>
+
+  <div class="admin-bar" id="adminBar">
+    <span>⚡ Admin mode</span>
+    <button class="add-btn" id="addEventBtn">+ Add event</button>
+  </div>
+
+  <div id="currentSection"></div>
+  <div id="scheduleSection"></div>
+</div>
+
+<!-- Event editor modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" style="position:relative">
+    <div class="modal-title" id="modalTitle">Add event</div>
+    <button class="modal-close" id="modalClose">✕</button>
+
+    <div class="field">
+      <label>Type</label>
+      <div class="type-picker">
+        <div class="type-option selected" data-type="activity">
+          <span class="type-icon-lbl">📍</span>Activity
+        </div>
+        <div class="type-option" data-type="deadline">
+          <span class="type-icon-lbl">⏰</span>Deadline
+        </div>
+        <div class="type-option" data-type="travel">
+          <span class="type-icon-lbl">🚗</span>Travel
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="fTitle" placeholder="e.g. Wine tasting" />
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Start</label>
+        <input type="datetime-local" id="fStart" />
+      </div>
+      <div class="field">
+        <label>End (optional)</label>
+        <input type="datetime-local" id="fEnd" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Notes / info</label>
+      <textarea id="fNotes" placeholder="e.g. Airbnb entry code: 1234&#10;Meet at the front gate"></textarea>
+    </div>
+
+    <button class="save-btn" id="saveBtn">Save event</button>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// CONFIG — fill these in after Supabase setup
+// ─────────────────────────────────────────────
+const SUPABASE_URL      = 'https://qrdkjtqarmiugxrsogte.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
+const TRIP_ID           = 1;           // fixed row id in the trips table
+const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
+
+const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
+
+// Demo events — used when Supabase isn't configured yet
+function demoEvents() {
+  const d = (offsetH) => new Date(Date.now() + offsetH * 3600000).toISOString();
+  return [
+    { id: '1', type: 'travel',   title: 'Drive to Tbilisi',       start_at: d(-5),   end_at: d(-3),  notes: null,                                              status: 'done',     trip_id: 1 },
+    { id: '2', type: 'activity', title: 'Wine tasting at Twins',   start_at: d(-0.5), end_at: d(2.5), notes: 'Address: Radiani St 3\nReservation: #TW-8821',    status: 'upcoming', trip_id: 1 },
+    { id: '3', type: 'deadline', title: 'Pick up car rental',      start_at: d(3),    end_at: d(3.5), notes: 'Code to lockbox: 4829\nCar: white Hyundai i20',   status: 'upcoming', trip_id: 1 },
+    { id: '4', type: 'activity', title: 'Check in at Airbnb',      start_at: d(4),    end_at: null,   notes: 'Entry pin: 7731#\nHost: Nino +995 555 123456',     status: 'upcoming', trip_id: 1 },
+    { id: '5', type: 'activity', title: 'Dinner at Barbarestan',   start_at: d(6),    end_at: d(8),   notes: 'Reservation under "Balazs", table for 5',          status: 'upcoming', trip_id: 1 },
+    { id: '6', type: 'travel',   title: 'Day trip to Mtskheta',    start_at: d(24),   end_at: d(28),  notes: null,                                              status: 'upcoming', trip_id: 1 },
+    { id: '7', type: 'deadline', title: 'Return car rental',       start_at: d(48),   end_at: d(48.5),notes: null,                                              status: 'upcoming', trip_id: 1 },
+    { id: '8', type: 'travel',   title: 'Flight home',             start_at: d(50),   end_at: d(53),  notes: 'TBS → BUD, Flight W63421\nGate closes 45min early',status: 'upcoming', trip_id: 1 },
+  ];
+}
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+const sb = DEMO_MODE ? null : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let events       = [];
+let isAdmin      = false;
+let editingId    = null;
+let selectedType = 'activity';
+let refreshTimer = null;
+
+// ─────────────────────────────────────────────
+// Auth
+// ─────────────────────────────────────────────
+document.getElementById('lockBtn').addEventListener('click', () => {
+  if (isAdmin) {
+    isAdmin = false;
+    document.getElementById('lockBtn').classList.remove('active');
+    document.getElementById('lockBtn').textContent = '🔒';
+    document.getElementById('adminBar').classList.remove('visible');
+    document.body.classList.remove('is-admin');
+    render();
+  } else {
+    const pw = prompt('Admin password:');
+    if (pw === ADMIN_PASSWORD) {
+      isAdmin = true;
+      document.getElementById('lockBtn').classList.add('active');
+      document.getElementById('lockBtn').textContent = '🔓';
+      document.getElementById('adminBar').classList.add('visible');
+      document.body.classList.add('is-admin');
+      render();
+    } else if (pw !== null) {
+      alert('Wrong password.');
+    }
+  }
+});
+
+// ─────────────────────────────────────────────
+// Data
+// ─────────────────────────────────────────────
+async function loadEvents() {
+  if (DEMO_MODE) {
+    events = demoEvents();
+    render();
+    return;
+  }
+
+  const { data, error } = await sb
+    .from('events')
+    .select('*')
+    .eq('trip_id', TRIP_ID)
+    .order('start_at', { ascending: true });
+
+  if (error) { console.error(error); return; }
+  events = data || [];
+  render();
+}
+
+async function saveEvent(ev) {
+  if (ev.id) {
+    await sb.from('events').update(ev).eq('id', ev.id);
+  } else {
+    await sb.from('events').insert({ ...ev, trip_id: TRIP_ID });
+  }
+  await loadEvents();
+}
+
+async function deleteEvent(id) {
+  await sb.from('events').delete().eq('id', id);
+  await loadEvents();
+}
+
+async function setStatus(id, status) {
+  await sb.from('events').update({ status }).eq('id', id);
+  await loadEvents();
+}
+
+async function advanceToNext() {
+  const ctx = scheduleContext();
+  if (ctx.current) await setStatus(ctx.current.id, 'done');
+  await loadEvents();
+}
+
+// ─────────────────────────────────────────────
+// Schedule logic
+// ─────────────────────────────────────────────
+function scheduleContext() {
+  const now = new Date();
+  const sorted = [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+
+  const currentIdx = sorted.findIndex(e => {
+    if (e.status === 'done' || e.status === 'skipped') return false;
+    const start = new Date(e.start_at);
+    const end   = e.end_at ? new Date(e.end_at) : null;
+    if (!end) return e.status === 'active' || (now >= start && now < start + 3600000);
+    return now >= start && now <= end;
+  });
+
+  if (currentIdx !== -1) {
+    return {
+      previous: currentIdx > 0 ? sorted[currentIdx - 1] : null,
+      current:  sorted[currentIdx],
+      next:     sorted[currentIdx + 1] || null,
+    };
+  }
+
+  // No active event — find next upcoming
+  const nextIdx = sorted.findIndex(e =>
+    e.status !== 'done' && e.status !== 'skipped' && new Date(e.start_at) > now
+  );
+
+  if (nextIdx !== -1) {
+    return {
+      previous: nextIdx > 0 ? sorted[nextIdx - 1] : null,
+      current:  null,
+      next:     sorted[nextIdx],
+    };
+  }
+
+  return { previous: sorted[sorted.length - 1] || null, current: null, next: null };
+}
+
+function progress(ev) {
+  const now   = new Date();
+  const start = new Date(ev.start_at);
+  const end   = ev.end_at ? new Date(ev.end_at) : null;
+  if (!end) return null;
+  const total   = end - start;
+  const elapsed = now - start;
+  return Math.max(0, Math.min(1, elapsed / total));
+}
+
+function formatTime(iso) {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function formatDay(iso) {
+  return new Date(iso).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function typeIcon(type) {
+  return { deadline: '⏰', travel: '🚗', activity: '📍' }[type] || '📍';
+}
+
+function typeClass(type) {
+  return { deadline: 'icon-deadline', travel: 'icon-travel', activity: 'icon-activity' }[type] || 'icon-activity';
+}
+
+function badgeHtml(ev, now = new Date()) {
+  const start = new Date(ev.start_at);
+  const end   = ev.end_at ? new Date(ev.end_at) : null;
+  if (ev.status === 'done')    return '<span class="status-badge badge-done">Done ✓</span>';
+  if (ev.status === 'skipped') return '<span class="status-badge badge-upcoming">Skipped</span>';
+  if (now > (end || start) && ev.status !== 'active')
+                               return '<span class="status-badge badge-late">Late</span>';
+  if (now >= start)            return '<span class="status-badge badge-active">Active</span>';
+  return '';
+}
+
+// ─────────────────────────────────────────────
+// Render
+// ─────────────────────────────────────────────
+function render() {
+  renderHeader();
+  renderCurrent();
+  renderSchedule();
+}
+
+function renderHeader() {
+  document.getElementById('tripTitle').innerHTML =
+    'Georgia 2026 <span class="refresh-dot"></span>';
+
+  const sorted = [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+  if (sorted.length) {
+    const first = new Date(sorted[0].start_at);
+    const last  = new Date(sorted[sorted.length - 1].start_at);
+    document.getElementById('tripDate').textContent =
+      `${first.toLocaleDateString([], { month: 'short', day: 'numeric' })} – ${last.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+    const now  = new Date();
+    const diff = first - now;
+    if (diff > 0) {
+      const days  = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      document.getElementById('countdown').innerHTML =
+        `Starts in <strong>${days}d ${hours}h</strong>`;
+    } else if (last > now) {
+      document.getElementById('countdown').innerHTML = '<strong>Trip is on! 🎉</strong>';
+    } else {
+      document.getElementById('countdown').textContent = 'Trip completed';
+    }
+  }
+}
+
+function renderCurrent() {
+  const el  = document.getElementById('currentSection');
+  const ctx = scheduleContext();
+
+  if (!ctx.current && !ctx.next) { el.innerHTML = ''; return; }
+
+  let html = '';
+
+  if (ctx.previous) {
+    html += `<div class="section-label">Previous</div>`;
+    html += eventCardHtml(ctx.previous, 'dimmed done');
+  }
+
+  if (ctx.current) {
+    html += `<div class="section-label">Now</div>`;
+    html += eventCardHtml(ctx.current, 'current', true);
+  }
+
+  if (ctx.next) {
+    html += `<div class="section-label">Up next</div>`;
+    html += eventCardHtml(ctx.next, '');
+  }
+
+  el.innerHTML = html;
+  bindCardActions(el);
+}
+
+function renderSchedule() {
+  const el     = document.getElementById('scheduleSection');
+  const sorted = [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+
+  if (!sorted.length) {
+    el.innerHTML = isAdmin
+      ? ''
+      : `<div class="empty"><div class="empty-icon">🗺️</div><p>No events yet.</p></div>`;
+    return;
+  }
+
+  // Group by day
+  const groups = {};
+  for (const ev of sorted) {
+    const day = formatDay(ev.start_at);
+    if (!groups[day]) groups[day] = [];
+    groups[day].push(ev);
+  }
+
+  let html = `<div class="section-label">Full schedule</div>`;
+  for (const [day, dayEvents] of Object.entries(groups)) {
+    html += `<div class="day-header">${day}</div>`;
+    for (const ev of dayEvents) {
+      const isDone = ev.status === 'done' || ev.status === 'skipped';
+      html += eventCardHtml(ev, isDone ? 'done' : '');
+    }
+  }
+
+  el.innerHTML = html;
+  bindCardActions(el);
+}
+
+function eventCardHtml(ev, extraClass = '', showProgress = false) {
+  const p   = progress(ev);
+  const end = ev.end_at ? ` – ${formatTime(ev.end_at)}` : '';
+  const isLate = new Date() > new Date(ev.end_at || ev.start_at) && ev.status !== 'done';
+
+  let progressHtml = '';
+  if (showProgress && p !== null) {
+    progressHtml = `
+      <div class="progress-wrap">
+        <div class="progress-track">
+          <div class="progress-fill ${isLate ? 'late' : ''}" style="width:${Math.round(p * 100)}%"></div>
+        </div>
+        <div class="progress-labels">
+          <span>${formatTime(ev.start_at)}</span>
+          <span>${Math.round(p * 100)}%</span>
+          <span>${formatTime(ev.end_at)}</span>
+        </div>
+      </div>`;
+  }
+
+  let notesHtml = '';
+  if (ev.notes) {
+    notesHtml = `
+      <div class="card-notes">
+        <div class="card-notes-label">ℹ️ Info</div>
+        ${escHtml(ev.notes)}
+      </div>`;
+  }
+
+  const adminHtml = `
+    <div class="card-actions">
+      <button class="action-btn" onclick="openEdit('${ev.id}')">✏️ Edit</button>
+      <button class="action-btn success" onclick="markDone('${ev.id}')">✓ Done</button>
+      <button class="action-btn advance" onclick="skipAdvance('${ev.id}')">⏭ Skip</button>
+      <button class="action-btn danger" onclick="removeEvent('${ev.id}')">🗑 Remove</button>
+    </div>`;
+
+  return `
+    <div class="card ${extraClass}" data-id="${ev.id}">
+      <div class="card-header">
+        <div class="card-icon ${typeClass(ev.type)}">${typeIcon(ev.type)}</div>
+        <div class="card-body">
+          <div class="card-title">${escHtml(ev.title)}</div>
+          <div class="card-meta">
+            <span class="card-time">${formatTime(ev.start_at)}${end}</span>
+            ${badgeHtml(ev)}
+          </div>
+        </div>
+      </div>
+      ${progressHtml}
+      ${notesHtml}
+      ${adminHtml}
+    </div>`;
+}
+
+function bindCardActions(el) {
+  // actions are bound via inline onclick — nothing extra needed
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────────────────────────
+// Admin actions (called from inline onclick)
+// ─────────────────────────────────────────────
+window.markDone    = (id) => setStatus(id, 'done');
+window.skipAdvance = (id) => setStatus(id, 'skipped');
+window.removeEvent = async (id) => {
+  if (confirm('Remove this event?')) await deleteEvent(id);
+};
+window.openEdit = (id) => {
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  editingId = id;
+  populateForm(ev);
+  document.getElementById('modalTitle').textContent = 'Edit event';
+  document.getElementById('modalOverlay').classList.add('open');
+};
+
+document.getElementById('addEventBtn').addEventListener('click', () => {
+  editingId = null;
+  resetForm();
+  document.getElementById('modalTitle').textContent = 'Add event';
+  document.getElementById('modalOverlay').classList.add('open');
+});
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+// ─────────────────────────────────────────────
+// Form
+// ─────────────────────────────────────────────
+document.querySelectorAll('.type-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    selectedType = opt.dataset.type;
+  });
+});
+
+function toLocalInput(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromLocalInput(val) {
+  if (!val) return null;
+  return new Date(val).toISOString();
+}
+
+function populateForm(ev) {
+  selectedType = ev.type || 'activity';
+  document.querySelectorAll('.type-option').forEach(o => {
+    o.classList.toggle('selected', o.dataset.type === selectedType);
+  });
+  document.getElementById('fTitle').value = ev.title || '';
+  document.getElementById('fStart').value = toLocalInput(ev.start_at);
+  document.getElementById('fEnd').value   = toLocalInput(ev.end_at);
+  document.getElementById('fNotes').value = ev.notes || '';
+}
+
+function resetForm() {
+  selectedType = 'activity';
+  document.querySelectorAll('.type-option').forEach(o => {
+    o.classList.toggle('selected', o.dataset.type === 'activity');
+  });
+  document.getElementById('fTitle').value = '';
+  document.getElementById('fStart').value = '';
+  document.getElementById('fEnd').value   = '';
+  document.getElementById('fNotes').value = '';
+}
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const title = document.getElementById('fTitle').value.trim();
+  const start = document.getElementById('fStart').value;
+  if (!title || !start) { alert('Title and start time are required.'); return; }
+
+  const ev = {
+    id:       editingId || undefined,
+    type:     selectedType,
+    title,
+    start_at: fromLocalInput(start),
+    end_at:   fromLocalInput(document.getElementById('fEnd').value) || null,
+    notes:    document.getElementById('fNotes').value.trim() || null,
+    status:   editingId ? (events.find(e => e.id === editingId)?.status || 'upcoming') : 'upcoming',
+  };
+
+  document.getElementById('saveBtn').disabled = true;
+  await saveEvent(ev);
+  document.getElementById('saveBtn').disabled = false;
+  closeModal();
+});
+
+// ─────────────────────────────────────────────
+// Live progress tick
+// ─────────────────────────────────────────────
+function startTick() {
+  setInterval(() => {
+    const ctx = scheduleContext();
+    if (!ctx.current) return;
+
+    // Update progress bar without full re-render
+    const p = progress(ctx.current);
+    if (p === null) return;
+    const fill = document.querySelector('#currentSection .progress-fill');
+    const pct  = document.querySelector('#currentSection .progress-labels span:nth-child(2)');
+    if (fill) fill.style.width = `${Math.round(p * 100)}%`;
+    if (pct)  pct.textContent  = `${Math.round(p * 100)}%`;
+  }, 10000); // every 10s
+}
+
+// Reload data every 30s
+function startRefresh() {
+  refreshTimer = setInterval(loadEvents, 30000);
+}
+
+// ─────────────────────────────────────────────
+// Boot
+// ─────────────────────────────────────────────
+loadEvents();
+startTick();
+startRefresh();
+</script>
+</body>
+</html>

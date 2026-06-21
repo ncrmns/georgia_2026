@@ -1,0 +1,511 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		20E26988A56BDFDE2EBFD793 /* ActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8086B8D6A21AC9DF0BC93750 /* ActivityManager.swift */; };
+		56547ADD5CC37D9FD7A715DD /* TripCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B40CBD701C4D8AA78083644 /* TripCoordinator.swift */; };
+		6D3FA76011A65C1346B841FB /* TripEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9877D997CB090094A9D9166F /* TripEditorView.swift */; };
+		6FDF98E7B941149240B9FFB5 /* TripStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD74DCD98357CC6B5328186 /* TripStore.swift */; };
+		7ABF59957950FDAC851C1D67 /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B59EB2D48804D8F78651A0 /* Event.swift */; };
+		860A3FDDD378D4F485928FD3 /* EventRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 743DBEF44DF22EF1A7D74305 /* EventRowView.swift */; };
+		8FC9FB12988C6779E49D8ADB /* GeorgiaActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 325D3423854F599744A66433 /* GeorgiaActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AA8AE19632BBE12C5851B6C5 /* VacationActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2495EEE6F418A932F4BF8C2 /* VacationActivityView.swift */; };
+		BE6F7C4C39C6BF0BFB73276A /* LocationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D8C7811B00806A962111507 /* LocationEngine.swift */; };
+		D33618DFF0212865977AFD5C /* StatusEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8ADDF2F933F6E4A9235665 /* StatusEngine.swift */; };
+		D9EDF02D5E638BF061243717 /* LiveActivitySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 959F1F2040D7B01C7E34A0FD /* LiveActivitySnapshot.swift */; };
+		DDE37924AF07E838F4A81732 /* EventEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B85088BD6FF3974196FE3F /* EventEditorView.swift */; };
+		E77170C518DB809976E2E4A9 /* VacationActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92097894701D8C20A46F3808 /* VacationActivityWidget.swift */; };
+		ED0D476C30547E6B050FFE5A /* GeorgiaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F16A7BBC37E59977230F518 /* GeorgiaApp.swift */; };
+		EFBA8AF318BEFA1462AC7C42 /* VacationActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F109411A88C03D95707196BF /* VacationActivityAttributes.swift */; };
+		FCC5C19E87249F6A83EC24AF /* ScheduleEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41C59CBE91EEB3E768ADD264 /* ScheduleEngine.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		1D9AD970CAB28CC6F6168697 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 33F6BAA31543617D93D3E191 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 20CDFD53F4B7B868D407D90A;
+			remoteInfo = GeorgiaActivityExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		02BEDC6B5B51760397A2A88B /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				8FC9FB12988C6779E49D8ADB /* GeorgiaActivityExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		1F16A7BBC37E59977230F518 /* GeorgiaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeorgiaApp.swift; sourceTree = "<group>"; };
+		325D3423854F599744A66433 /* GeorgiaActivityExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = GeorgiaActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		41C59CBE91EEB3E768ADD264 /* ScheduleEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleEngine.swift; sourceTree = "<group>"; };
+		6893C15C2457F706FAA3F95D /* Georgia.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Georgia.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		743DBEF44DF22EF1A7D74305 /* EventRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventRowView.swift; sourceTree = "<group>"; };
+		7B40CBD701C4D8AA78083644 /* TripCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripCoordinator.swift; sourceTree = "<group>"; };
+		7D8C7811B00806A962111507 /* LocationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationEngine.swift; sourceTree = "<group>"; };
+		8086B8D6A21AC9DF0BC93750 /* ActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityManager.swift; sourceTree = "<group>"; };
+		84B59EB2D48804D8F78651A0 /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
+		8D8ADDF2F933F6E4A9235665 /* StatusEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusEngine.swift; sourceTree = "<group>"; };
+		90571F24DD4665B215FA2C1E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		92097894701D8C20A46F3808 /* VacationActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VacationActivityWidget.swift; sourceTree = "<group>"; };
+		959F1F2040D7B01C7E34A0FD /* LiveActivitySnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivitySnapshot.swift; sourceTree = "<group>"; };
+		9877D997CB090094A9D9166F /* TripEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripEditorView.swift; sourceTree = "<group>"; };
+		AE6550DA348B1DB7A777729E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		BDD74DCD98357CC6B5328186 /* TripStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripStore.swift; sourceTree = "<group>"; };
+		D2495EEE6F418A932F4BF8C2 /* VacationActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VacationActivityView.swift; sourceTree = "<group>"; };
+		E2B85088BD6FF3974196FE3F /* EventEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventEditorView.swift; sourceTree = "<group>"; };
+		F109411A88C03D95707196BF /* VacationActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VacationActivityAttributes.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		1D1F4F34CB0EDD5F46EAE722 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				84B59EB2D48804D8F78651A0 /* Event.swift */,
+				959F1F2040D7B01C7E34A0FD /* LiveActivitySnapshot.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		2A8556E19B521A659F677DFD /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				8086B8D6A21AC9DF0BC93750 /* ActivityManager.swift */,
+				41C59CBE91EEB3E768ADD264 /* ScheduleEngine.swift */,
+				8D8ADDF2F933F6E4A9235665 /* StatusEngine.swift */,
+				7B40CBD701C4D8AA78083644 /* TripCoordinator.swift */,
+			);
+			path = Engine;
+			sourceTree = "<group>";
+		};
+		51C5B33EBE1A3D295C742379 /* GeorgiaActivityExtension */ = {
+			isa = PBXGroup;
+			children = (
+				AE6550DA348B1DB7A777729E /* Info.plist */,
+				F109411A88C03D95707196BF /* VacationActivityAttributes.swift */,
+				D2495EEE6F418A932F4BF8C2 /* VacationActivityView.swift */,
+				92097894701D8C20A46F3808 /* VacationActivityWidget.swift */,
+			);
+			path = GeorgiaActivityExtension;
+			sourceTree = "<group>";
+		};
+		6123F9C89DAEA80286407304 = {
+			isa = PBXGroup;
+			children = (
+				9F5A353AD40DF3FCEC16F779 /* Georgia */,
+				51C5B33EBE1A3D295C742379 /* GeorgiaActivityExtension */,
+				F6178A34F08B6DF5C5C5D11A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9F5A353AD40DF3FCEC16F779 /* Georgia */ = {
+			isa = PBXGroup;
+			children = (
+				1F16A7BBC37E59977230F518 /* GeorgiaApp.swift */,
+				90571F24DD4665B215FA2C1E /* Info.plist */,
+				2A8556E19B521A659F677DFD /* Engine */,
+				E2A531AF4DB6AC9004BB90F6 /* Location */,
+				1D1F4F34CB0EDD5F46EAE722 /* Model */,
+				AA6D06EC2D63233970CBCFD9 /* Persistence */,
+				A9A0FE7A8007376F92B2AE18 /* Views */,
+			);
+			path = Georgia;
+			sourceTree = "<group>";
+		};
+		A9A0FE7A8007376F92B2AE18 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				E2B85088BD6FF3974196FE3F /* EventEditorView.swift */,
+				743DBEF44DF22EF1A7D74305 /* EventRowView.swift */,
+				9877D997CB090094A9D9166F /* TripEditorView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		AA6D06EC2D63233970CBCFD9 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				BDD74DCD98357CC6B5328186 /* TripStore.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		E2A531AF4DB6AC9004BB90F6 /* Location */ = {
+			isa = PBXGroup;
+			children = (
+				7D8C7811B00806A962111507 /* LocationEngine.swift */,
+			);
+			path = Location;
+			sourceTree = "<group>";
+		};
+		F6178A34F08B6DF5C5C5D11A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6893C15C2457F706FAA3F95D /* Georgia.app */,
+				325D3423854F599744A66433 /* GeorgiaActivityExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		20CDFD53F4B7B868D407D90A /* GeorgiaActivityExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7FD43D47B73AD9375A863C5F /* Build configuration list for PBXNativeTarget "GeorgiaActivityExtension" */;
+			buildPhases = (
+				EA64D68E9256FF7AEB1D4CC1 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GeorgiaActivityExtension;
+			packageProductDependencies = (
+			);
+			productName = GeorgiaActivityExtension;
+			productReference = 325D3423854F599744A66433 /* GeorgiaActivityExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		B68B8E5233A1434A7FAF9B6A /* Georgia */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 15EF3868FB58EA972B6911F4 /* Build configuration list for PBXNativeTarget "Georgia" */;
+			buildPhases = (
+				4ABF3CFC9124D2E167816E1B /* Sources */,
+				02BEDC6B5B51760397A2A88B /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9716AE05701700DE6BEADBB0 /* PBXTargetDependency */,
+			);
+			name = Georgia;
+			packageProductDependencies = (
+			);
+			productName = Georgia;
+			productReference = 6893C15C2457F706FAA3F95D /* Georgia.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		33F6BAA31543617D93D3E191 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					20CDFD53F4B7B868D407D90A = {
+						DevelopmentTeam = "";
+					};
+					B68B8E5233A1434A7FAF9B6A = {
+						DevelopmentTeam = "";
+					};
+				};
+			};
+			buildConfigurationList = 260B590ED80B7BF43A0F122E /* Build configuration list for PBXProject "Georgia" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 6123F9C89DAEA80286407304;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F6178A34F08B6DF5C5C5D11A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B68B8E5233A1434A7FAF9B6A /* Georgia */,
+				20CDFD53F4B7B868D407D90A /* GeorgiaActivityExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4ABF3CFC9124D2E167816E1B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				20E26988A56BDFDE2EBFD793 /* ActivityManager.swift in Sources */,
+				7ABF59957950FDAC851C1D67 /* Event.swift in Sources */,
+				DDE37924AF07E838F4A81732 /* EventEditorView.swift in Sources */,
+				860A3FDDD378D4F485928FD3 /* EventRowView.swift in Sources */,
+				ED0D476C30547E6B050FFE5A /* GeorgiaApp.swift in Sources */,
+				D9EDF02D5E638BF061243717 /* LiveActivitySnapshot.swift in Sources */,
+				BE6F7C4C39C6BF0BFB73276A /* LocationEngine.swift in Sources */,
+				FCC5C19E87249F6A83EC24AF /* ScheduleEngine.swift in Sources */,
+				D33618DFF0212865977AFD5C /* StatusEngine.swift in Sources */,
+				56547ADD5CC37D9FD7A715DD /* TripCoordinator.swift in Sources */,
+				6D3FA76011A65C1346B841FB /* TripEditorView.swift in Sources */,
+				6FDF98E7B941149240B9FFB5 /* TripStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EA64D68E9256FF7AEB1D4CC1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EFBA8AF318BEFA1462AC7C42 /* VacationActivityAttributes.swift in Sources */,
+				AA8AE19632BBE12C5851B6C5 /* VacationActivityView.swift in Sources */,
+				E77170C518DB809976E2E4A9 /* VacationActivityWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9716AE05701700DE6BEADBB0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 20CDFD53F4B7B868D407D90A /* GeorgiaActivityExtension */;
+			targetProxy = 1D9AD970CAB28CC6F6168697 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		05152ACB93033159A49C1AC1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		076150A4813C5EE31303942B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = GeorgiaActivityExtension/GeorgiaActivityExtension.entitlements;
+				INFOPLIST_FILE = GeorgiaActivityExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourapp.georgia.activity;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		612348ABF145BAB0FBBCD24D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Georgia/Georgia.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Georgia/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourapp.georgia;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		90436B3AE6426904E044252A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		9FD42C37E80DBA556B4C8112 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Georgia/Georgia.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Georgia/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourapp.georgia;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B8821C5356BE4B7ACCAF6848 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = GeorgiaActivityExtension/GeorgiaActivityExtension.entitlements;
+				INFOPLIST_FILE = GeorgiaActivityExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourapp.georgia.activity;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		15EF3868FB58EA972B6911F4 /* Build configuration list for PBXNativeTarget "Georgia" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9FD42C37E80DBA556B4C8112 /* Debug */,
+				612348ABF145BAB0FBBCD24D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		260B590ED80B7BF43A0F122E /* Build configuration list for PBXProject "Georgia" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				05152ACB93033159A49C1AC1 /* Debug */,
+				90436B3AE6426904E044252A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7FD43D47B73AD9375A863C5F /* Build configuration list for PBXNativeTarget "GeorgiaActivityExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B8821C5356BE4B7ACCAF6848 /* Debug */,
+				076150A4813C5EE31303942B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 33F6BAA31543617D93D3E191 /* Project object */;
+}

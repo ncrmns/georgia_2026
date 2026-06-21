@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "georgia-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3456", "web"],
+      "port": 3456
+    }
+  ]
+}
