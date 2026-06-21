@@ -482,18 +482,7 @@ function demoEvents() {
 const sb = DEMO_MODE ? null : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let events        = [];
-function getCookie(name) {
-  return document.cookie.split('; ').find(r => r.startsWith(name + '='))?.split('=')[1];
-}
-function setCookie(name, value, days) {
-  const exp = new Date(Date.now() + days * 864e5).toUTCString();
-  document.cookie = `${name}=${value}; expires=${exp}; path=/; SameSite=Strict`;
-}
-function deleteCookie(name) {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
-}
-
-let isAdmin = getCookie('georgia_admin') === ADMIN_PASSWORD;
+let isAdmin = false;
 let editingId     = null;
 let selectedType  = 'activity';
 let selectedIcon  = '📍';
@@ -507,25 +496,18 @@ let refreshTimer  = null;
 document.getElementById('lockBtn').addEventListener('click', () => {
   if (isAdmin) {
     isAdmin = false;
-    deleteCookie('georgia_admin');
     document.getElementById('lockBtn').classList.remove('active');
     document.getElementById('lockBtn').textContent = '🔒';
     document.getElementById('adminBar').classList.remove('visible');
     document.body.classList.remove('is-admin');
     render();
   } else {
-    const pw = prompt('Admin password:');
-    if (pw === ADMIN_PASSWORD) {
-      isAdmin = true;
-      setCookie('georgia_admin', ADMIN_PASSWORD, 30);
-      document.getElementById('lockBtn').classList.add('active');
-      document.getElementById('lockBtn').textContent = '🔓';
-      document.getElementById('adminBar').classList.add('visible');
-      document.body.classList.add('is-admin');
-      render();
-    } else if (pw !== null) {
-      alert('Wrong password.');
-    }
+    isAdmin = true;
+    document.getElementById('lockBtn').classList.add('active');
+    document.getElementById('lockBtn').textContent = '🔓';
+    document.getElementById('adminBar').classList.add('visible');
+    document.body.classList.add('is-admin');
+    render();
   }
 });
 
@@ -1025,12 +1007,6 @@ function startRefresh() {
 // ─────────────────────────────────────────────
 // Boot
 // ─────────────────────────────────────────────
-if (isAdmin) {
-  document.getElementById('lockBtn').classList.add('active');
-  document.getElementById('lockBtn').textContent = '🔓';
-  document.getElementById('adminBar').classList.add('visible');
-  document.body.classList.add('is-admin');
-}
 
 loadEvents();
 startTick();
