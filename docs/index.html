@@ -863,8 +863,10 @@ function renderSchedule() {
     html += `<div class="day-header">${day}</div>`;
     for (const ev of dayEvents) {
       const isDone = ev.status === 'done' || ev.status === 'skipped';
-      const isUpcoming = !isDone && new Date(ev.start_at) > new Date();
-      html += eventCardHtml(ev, isDone ? 'done' : '', false, isUpcoming);
+      const isPast = !isDone && new Date(ev.end_at || ev.start_at) < new Date();
+      const isUpcoming = !isDone && !isPast && new Date(ev.start_at) > new Date();
+      const extraClass = isDone || isPast ? 'done' : '';
+      html += eventCardHtml(ev, extraClass, false, isUpcoming);
     }
     html += `</div>`;
     dayIdx++;
