@@ -833,6 +833,10 @@ function animateCardsIn() {
   cards.forEach((card, i) => {
     card.classList.add('animate-in');
     card.style.animationDelay = `${i * 55}ms`;
+    card.addEventListener('animationend', () => {
+      card.classList.remove('animate-in');
+      card.style.animationDelay = '';
+    }, { once: true });
   });
 }
 
