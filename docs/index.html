@@ -848,7 +848,7 @@ function badgeHtml(ev, now = new Date()) {
   if (ev.status === 'skipped') return '<span class="status-badge badge-upcoming">Skipped</span>';
   if (now > (end || start) && ev.status !== 'active')
                                return '<span class="status-badge badge-late">Late</span>';
-  if (now >= start)            return '<span class="status-badge badge-active">Active</span>';
+  if (now >= start)            return '';
   return '';
 }
 
@@ -1153,10 +1153,10 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
     return `
     <div class="card ${extraClass}${colorClass}${typeClass2}"${colorStyle} data-id="${ev.id}">
       ${routeHtml}
-      <div class="card-meta" style="margin-top:6px">
+      ${showProgress && p !== null ? '' : `<div class="card-meta" style="margin-top:6px">
         <span class="card-time">${formatTime(ev.start_at)}${end}</span>
         ${badgeHtml(ev)}${startsInLabel}
-      </div>
+      </div>`}
       ${progressHtml}
       ${notesHtml}
       ${adminHtml}
@@ -1169,10 +1169,10 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
         <div class="card-icon ${typeClass(ev.type)}">${iconHtml(eventIcon(ev))}</div>
         <div class="card-body">
           <div class="card-title">${escHtml(ev.title)}</div>
-          <div class="card-meta">
+          ${showProgress && p !== null ? '' : `<div class="card-meta">
             <span class="card-time">${formatTime(ev.start_at)}${end}</span>
             ${badgeHtml(ev)}${startsInLabel}
-          </div>
+          </div>`}
         </div>
       </div>
       ${progressHtml}
