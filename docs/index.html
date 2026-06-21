@@ -213,7 +213,7 @@
     .field input, .field select, .field textarea {
       width: 100%; background: var(--surface2); border: 1px solid var(--border);
       color: var(--text); border-radius: var(--radius-sm); padding: 10px 12px;
-      font-size: 15px; outline: none; font-family: inherit;
+      font-size: 16px; outline: none; font-family: inherit;
     }
     .field input:focus, .field select:focus, .field textarea:focus {
       border-color: var(--accent);
@@ -685,7 +685,7 @@ function renderPinned() {
   if (isAdmin) {
     html += `<div class="pinned-note" id="addNoteRow" style="gap:6px">
       <input id="noteInput" type="text" placeholder="Add a note…"
-        style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit;"
+        style="flex:1;background:none;border:none;outline:none;font-size:16px;color:var(--text);font-family:inherit;"
         onkeydown="if(event.key==='Enter')saveNote()" />
       <button onclick="saveNote()"
         style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
