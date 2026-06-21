@@ -242,25 +242,31 @@
     .vehicle-opt span { font-size: 22px; display: block; margin-bottom: 3px; }
 
     /* ── Color accent picker ── */
-    .color-picker { display: flex; gap: 8px; }
+    .color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
     .color-dot {
-      width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
-      border: 2px solid transparent; transition: border-color .15s; flex-shrink: 0;
+      width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent; transition: all .15s; flex-shrink: 0;
+      position: relative;
     }
-    .color-dot.selected { border-color: #fff; }
-    .color-dot.none { background: var(--surface2); border: 2px solid var(--border); }
+    .color-dot.selected { border-color: #fff; transform: scale(1.2); }
+    .color-dot.none {
+      background: var(--surface2); border: 2px solid var(--border);
+    }
+    .color-dot.none.selected { border-color: var(--muted); }
 
-    /* ── Card color accent ── */
-    .card[data-color]::before {
-      content: ''; position: absolute; left: 0; top: 10px; bottom: 10px;
-      width: 3px; border-radius: 2px;
+    /* ── Card color accent (left stripe + bg tint) ── */
+    .card.has-color::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; border-radius: 2px 0 0 2px;
+      background: var(--card-color, transparent);
     }
-    .card[data-color="red"]::before    { background: var(--red); }
-    .card[data-color="blue"]::before   { background: var(--accent); }
-    .card[data-color="green"]::before  { background: var(--green); }
-    .card[data-color="orange"]::before { background: var(--orange); }
-    .card[data-color="purple"]::before { background: var(--purple); }
-    .card[data-color]:not([data-color=""]) { padding-left: 20px; overflow: hidden; }
+    .card.has-color {
+      padding-left: 20px; overflow: hidden;
+      background-color: color-mix(in srgb, var(--card-color, transparent) 7%, var(--surface));
+    }
+    .card.has-color.current {
+      background-color: color-mix(in srgb, var(--card-color, transparent) 10%, #111827);
+    }
 
     .save-btn {
       width: 100%; background: var(--accent); color: #fff; border: none;
@@ -405,11 +411,17 @@
       <label>Accent colour</label>
       <div class="color-picker">
         <div class="color-dot none selected" data-color=""></div>
-        <div class="color-dot" data-color="blue"   style="background:#4f8ef7"></div>
-        <div class="color-dot" data-color="green"  style="background:#34c759"></div>
-        <div class="color-dot" data-color="orange" style="background:#ff9f0a"></div>
-        <div class="color-dot" data-color="red"    style="background:#ff453a"></div>
-        <div class="color-dot" data-color="purple" style="background:#bf5af2"></div>
+        <div class="color-dot" data-color="#7ba7d4" style="background:#7ba7d4" title="Steel blue"></div>
+        <div class="color-dot" data-color="#6daa82" style="background:#6daa82" title="Sage green"></div>
+        <div class="color-dot" data-color="#c4855a" style="background:#c4855a" title="Terracotta"></div>
+        <div class="color-dot" data-color="#c47a8a" style="background:#c47a8a" title="Dusty rose"></div>
+        <div class="color-dot" data-color="#9b82c4" style="background:#9b82c4" title="Soft purple"></div>
+        <div class="color-dot" data-color="#5aadaa" style="background:#5aadaa" title="Teal"></div>
+        <div class="color-dot" data-color="#b89a4a" style="background:#b89a4a" title="Mustard"></div>
+        <div class="color-dot" data-color="#8a7ac4" style="background:#8a7ac4" title="Indigo"></div>
+        <div class="color-dot" data-color="#a07a6a" style="background:#a07a6a" title="Warm brown"></div>
+        <div class="color-dot" data-color="#6a9e6a" style="background:#6a9e6a" title="Forest"></div>
+        <div class="color-dot" data-color="#c4a05a" style="background:#c4a05a" title="Sand"></div>
       </div>
     </div>
 
@@ -776,9 +788,10 @@ function eventCardHtml(ev, extraClass = '', showProgress = false) {
       <button class="action-btn danger" onclick="removeEvent('${ev.id}')">🗑 Remove</button>
     </div>`;
 
-  const colorAttr = ev.color ? ` data-color="${ev.color}"` : '';
+  const colorStyle = ev.color ? ` style="--card-color:${ev.color}"` : '';
+  const colorClass = ev.color ? ' has-color' : '';
   return `
-    <div class="card ${extraClass}"${colorAttr} data-id="${ev.id}">
+    <div class="card ${extraClass}${colorClass}"${colorStyle} data-id="${ev.id}">
       <div class="card-header">
         <div class="card-icon ${typeClass(ev.type)}">${eventIcon(ev)}</div>
         <div class="card-body">
