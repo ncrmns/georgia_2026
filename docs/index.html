@@ -111,8 +111,8 @@
     /* ── Progress bar ── */
     .progress-wrap { margin-top: 12px; }
     .progress-track {
-      height: 4px; background: var(--surface2);
-      border-radius: 2px; overflow: hidden;
+      height: 8px; background: var(--surface2);
+      border-radius: 4px; overflow: hidden;
     }
     .progress-fill {
       height: 100%; border-radius: 2px;
@@ -461,7 +461,7 @@
     </div>
 
     <div class="field">
-      <label>Notes / info</label>
+      <label>Notes / info <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
       <textarea id="fNotes" placeholder="e.g. Airbnb entry code: 1234&#10;Meet at the front gate"></textarea>
     </div>
 
@@ -637,6 +637,16 @@ function formatTime(iso) {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
+function formatTimeLeft(ms) {
+  if (ms <= 0) return 'overtime';
+  const totalMin = Math.ceil(ms / 60000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h === 0) return `${m}m left`;
+  if (m === 0) return `${h}h left`;
+  return `${h}h ${m}m left`;
+}
+
 function formatDay(iso) {
   return new Date(iso).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 }
@@ -789,6 +799,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false) {
 
   let progressHtml = '';
   if (showProgress && p !== null) {
+    const timeLeftLabel = isLate ? 'overtime' : formatTimeLeft(new Date(ev.end_at) - new Date());
     progressHtml = `
       <div class="progress-wrap">
         <div class="progress-track">
@@ -796,7 +807,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false) {
         </div>
         <div class="progress-labels">
           <span>${formatTime(ev.start_at)}</span>
-          <span>${Math.round(p * 100)}%</span>
+          <span>${timeLeftLabel}</span>
           <span>${formatTime(ev.end_at)}</span>
         </div>
       </div>`;
@@ -1066,8 +1077,9 @@ function startTick() {
     if (p === null) return;
     const fill = document.querySelector('#currentSection .progress-fill');
     const pct  = document.querySelector('#currentSection .progress-labels span:nth-child(2)');
+    const isLate = new Date() > new Date(ctx.current.end_at || ctx.current.start_at);
     if (fill) fill.style.width = `${Math.round(p * 100)}%`;
-    if (pct)  pct.textContent  = `${Math.round(p * 100)}%`;
+    if (pct)  pct.textContent  = isLate ? 'overtime' : formatTimeLeft(new Date(ctx.current.end_at) - new Date());
   }, 10000); // every 10s
 }
 
