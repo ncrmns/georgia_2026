@@ -269,6 +269,51 @@
     }
     .save-btn:disabled { opacity: .4; cursor: default; }
 
+    /* ── Admin mode feel ── */
+    .is-admin {
+      background: #0e0c09;
+    }
+    .is-admin .app {
+      border-left: 1px solid rgba(255,159,10,.08);
+      border-right: 1px solid rgba(255,159,10,.08);
+    }
+    .is-admin .card {
+      border-color: rgba(255,159,10,.25);
+      cursor: pointer;
+    }
+    .is-admin .card:hover {
+      border-color: rgba(255,159,10,.6);
+      background: #1e1a10;
+    }
+    .is-admin .card.current {
+      border-color: var(--orange);
+      background: #1a1508;
+    }
+    .is-admin .section-label {
+      color: rgba(255,159,10,.6);
+    }
+    .is-admin .day-header {
+      color: rgba(255,159,10,.5);
+    }
+    .is-admin .day-header::after {
+      background: rgba(255,159,10,.15);
+    }
+    .admin-bar {
+      position: sticky; top: 0; z-index: 50;
+      background: #1a1200;
+      border: 1px solid var(--orange);
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      border-top: none;
+      box-shadow: 0 4px 24px rgba(255,159,10,.15);
+    }
+    .admin-bar span { color: var(--orange); }
+    .add-btn { background: var(--orange); }
+    .lock-btn.active {
+      color: var(--orange);
+      border-color: var(--orange);
+      box-shadow: 0 0 10px rgba(255,159,10,.3);
+    }
+
     /* ── Refresh indicator ── */
     .refresh-dot {
       width: 6px; height: 6px; border-radius: 50%;
