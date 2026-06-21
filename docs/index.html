@@ -445,9 +445,9 @@
 
     /* ── Refresh indicator ── */
     .refresh-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--green); display: inline-block; margin-left: 6px;
-      animation: pulse 2s infinite;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green); display: inline-block; margin-left: 7px;
+      animation: pulse 2s infinite; vertical-align: middle;
     }
     .refresh-dot.offline {
       background: var(--muted);
@@ -507,7 +507,10 @@
         <div class="trip-date" id="tripDate"></div>
         <div class="countdown" id="countdown"></div>
       </div>
-      <button class="lock-btn" id="lockBtn" title="Admin login"><i data-lucide="lock"></i></button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="lock-btn" id="copyBtn" title="Copy page URL"><i data-lucide="link"></i></button>
+        <button class="lock-btn" id="lockBtn" title="Admin login"><i data-lucide="lock"></i></button>
+      </div>
     </div>
   </div>
 
@@ -694,6 +697,15 @@ document.getElementById('lockBtn').addEventListener('click', () => {
     document.body.classList.add('is-admin');
     render();
   }
+});
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('copyBtn');
+  try {
+    await navigator.clipboard.writeText(location.href);
+    btn.innerHTML = '<i data-lucide="check"></i>'; lucide.createIcons();
+    setTimeout(() => { btn.innerHTML = '<i data-lucide="link"></i>'; lucide.createIcons(); }, 1500);
+  } catch (e) {}
 });
 
 // ─────────────────────────────────────────────
