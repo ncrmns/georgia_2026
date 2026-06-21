@@ -497,9 +497,21 @@
       </div>
     </div>
 
-    <div class="field">
+    <div class="field" id="titleField">
       <label>Title</label>
       <input type="text" id="fTitle" placeholder="e.g. Wine tasting" />
+    </div>
+
+    <!-- Travel-only from/to -->
+    <div class="field-row" id="routeField" style="display:none">
+      <div class="field">
+        <label>From</label>
+        <input type="text" id="fFrom" placeholder="e.g. Budapest" />
+      </div>
+      <div class="field">
+        <label>To</label>
+        <input type="text" id="fTo" placeholder="e.g. Kutaisi" />
+      </div>
     </div>
 
     <div class="field-row">
@@ -1022,6 +1034,8 @@ function updateFormForType() {
   const isTravel = selectedType === 'travel';
   document.getElementById('vehicleField').style.display = isTravel ? '' : 'none';
   document.getElementById('iconField').style.display    = isTravel ? 'none' : '';
+  document.getElementById('routeField').style.display   = isTravel ? '' : 'none';
+  document.getElementById('titleField').style.display   = isTravel ? 'none' : '';
 }
 
 // Vehicle picker
@@ -1111,7 +1125,16 @@ function populateForm(ev) {
   }
   setSelectedColor(ev.color);
 
-  document.getElementById('fTitle').value = ev.title || '';
+  if (selectedType === 'travel') {
+    const parts = (ev.title || '').split(/\s*->\s*/);
+    document.getElementById('fFrom').value = parts[0] || '';
+    document.getElementById('fTo').value   = parts[1] || '';
+    document.getElementById('fTitle').value = '';
+  } else {
+    document.getElementById('fTitle').value = ev.title || '';
+    document.getElementById('fFrom').value  = '';
+    document.getElementById('fTo').value    = '';
+  }
   document.getElementById('fStart').value = toLocalInput(ev.start_at);
   document.getElementById('fEnd').value   = toLocalInput(ev.end_at);
   document.getElementById('fNotes').value = ev.notes || '';
@@ -1127,15 +1150,22 @@ function resetForm() {
   setSelectedVehicle('🚗');
   setSelectedColor('');
   document.getElementById('fTitle').value = '';
+  document.getElementById('fFrom').value  = '';
+  document.getElementById('fTo').value    = '';
   document.getElementById('fStart').value = '';
   document.getElementById('fEnd').value   = '';
   document.getElementById('fNotes').value = '';
 }
 
 document.getElementById('saveBtn').addEventListener('click', async () => {
-  const title = document.getElementById('fTitle').value.trim();
+  const isTravel = selectedType === 'travel';
+  const from  = document.getElementById('fFrom').value.trim();
+  const to    = document.getElementById('fTo').value.trim();
+  const title = isTravel
+    ? (from && to ? `${from} -> ${to}` : from || to || '')
+    : document.getElementById('fTitle').value.trim();
   const start = document.getElementById('fStart').value;
-  if (!title || !start) { alert('Title and start time are required.'); return; }
+  if (!title || !start) { alert((isTravel ? 'From/To' : 'Title') + ' and start time are required.'); return; }
 
   const resolvedIcon = selectedType === 'travel' ? selectedVehicle : selectedIcon;
 
