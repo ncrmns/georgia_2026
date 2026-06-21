@@ -387,13 +387,6 @@
     .card.done   { opacity: .35; filter: saturate(.4); }
     .card.dimmed { opacity: .5;  filter: saturate(.5); }
 
-    /* ── Highlight badge ── */
-    .card.is-highlight .card-icon {
-      width: 40px; height: 40px; font-size: 20px;
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--card-color, var(--accent)) 40%, transparent);
-    }
-    .highlight-toggle { font-size: 11px; cursor: pointer; opacity: .5; transition: opacity .15s; }
-    .highlight-toggle:hover, .card.is-highlight .highlight-toggle { opacity: 1; }
 
     /* ── Travel card route display ── */
     .travel-route {
@@ -653,16 +646,6 @@ async function deleteEvent(id) {
   await loadEvents();
 }
 
-window.toggleHighlight = async (id) => {
-  const ev = events.find(e => e.id === id);
-  if (!ev) return;
-  const { error } = await sb.from('events').update({ is_highlight: !ev.is_highlight }).eq('id', id);
-  if (error) {
-    alert(`Run this in Supabase SQL Editor:\nalter table events add column if not exists is_highlight boolean default false;`);
-    return;
-  }
-  await loadEvents();
-};
 
 async function setStatus(id, status) {
   await sb.from('events').update({ status }).eq('id', id);
@@ -933,7 +916,6 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
   const startsInMs = new Date(ev.start_at) - new Date();
   const startsInLabel = showStartsIn && startsInMs > 0 ? `<span class="starts-in">in ${formatTimeLeft(startsInMs).replace(' left','')}</span>` : '';
   const typeClass2 = ev.type === 'travel' ? ' type-travel' : ev.type === 'deadline' ? ' type-deadline' : '';
-  const highlightClass = ev.is_highlight ? ' is-highlight' : '';
 
   let progressHtml = '';
   if (showProgress && p !== null) {
@@ -962,7 +944,6 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
       <button class="action-btn" onclick="openEdit('${ev.id}')">✏️ Edit</button>
       <button class="action-btn success" onclick="markDone('${ev.id}')">✓ Done</button>
       <button class="action-btn advance" onclick="skipAdvance('${ev.id}')">⏭ Skip</button>
-      <button class="action-btn ${ev.is_highlight ? 'success' : ''}" onclick="toggleHighlight('${ev.id}')">${ev.is_highlight ? '★ Highlighted' : '☆ Highlight'}</button>
       <button class="action-btn danger" onclick="removeEvent('${ev.id}')">🗑 Remove</button>
     </div>`;
 
@@ -973,7 +954,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
 
   if (isTravel && routeHtml) {
     return `
-    <div class="card ${extraClass}${colorClass}${typeClass2}${highlightClass}"${colorStyle} data-id="${ev.id}">
+    <div class="card ${extraClass}${colorClass}${typeClass2}"${colorStyle} data-id="${ev.id}">
       ${routeHtml}
       <div class="card-meta" style="margin-top:6px">
         <span class="card-time">${formatTime(ev.start_at)}${end}</span>
@@ -986,7 +967,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
   }
 
   return `
-    <div class="card ${extraClass}${colorClass}${typeClass2}${highlightClass}"${colorStyle} data-id="${ev.id}">
+    <div class="card ${extraClass}${colorClass}${typeClass2}"${colorStyle} data-id="${ev.id}">
       <div class="card-header">
         <div class="card-icon ${typeClass(ev.type)}">${iconHtml(eventIcon(ev))}</div>
         <div class="card-body">
