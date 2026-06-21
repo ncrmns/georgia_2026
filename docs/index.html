@@ -1110,7 +1110,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
       <button class="action-btn edit" onclick="openEdit('${ev.id}')"><i data-lucide="pencil"></i>Edit</button>
       <button class="action-btn success" onclick="markDone('${ev.id}')"><i data-lucide="check"></i>Done</button>
       <button class="action-btn advance" onclick="skipAdvance('${ev.id}')"><i data-lucide="skip-forward"></i>Skip</button>
-      <button class="action-btn danger" onclick="removeEvent('${ev.id}')"><i data-lucide="x"></i></button>
+      <button class="action-btn danger" onclick="removeEvent('${ev.id}')"><i data-lucide="x"></i>Remove</button>
     </div>`;
 
   const colorStyle = ev.color ? ` style="--card-color:${ev.color}"` : '';
