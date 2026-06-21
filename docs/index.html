@@ -475,6 +475,7 @@
 
   <div id="pinnedSection"></div>
   <div id="pastSection"></div>
+  <div id="todayPastSection"></div>
   <div id="currentSection"></div>
   <div id="scheduleSection"></div>
 </div>
@@ -820,6 +821,7 @@ function render() {
   renderHeader();
   renderPinned();
   renderPastDays();
+  renderTodayPast();
   renderCurrent();
   renderSchedule();
   lucide.createIcons();
@@ -909,9 +911,80 @@ function renderHeader() {
   }
 }
 
+function sameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+}
+
+function groupByDay(evList) {
+  const groups = {};
+  for (const ev of [...evList].sort((a, b) => new Date(a.start_at) - new Date(b.start_at))) {
+    const day = formatDay(ev.start_at);
+    if (!groups[day]) groups[day] = [];
+    groups[day].push(ev);
+  }
+  return groups;
+}
+
+function dayBandHtml(day, dayEvents, collapsed, dayIdx) {
+  const bandClass = `day-band-${Math.min(dayIdx, 3)}`;
+  const collClass = collapsed ? ' collapsed' : '';
+  let html = `<div class="${bandClass}">`;
+  html += `<div class="day-header collapsible${collClass}" onclick="toggleDay(this)">
+    ${day}
+    <span class="day-chevron"><i data-lucide="chevron-down"></i></span>
+  </div>`;
+  html += `<div class="day-cards${collClass}">`;
+  for (const ev of dayEvents) {
+    const isDone = ev.status === 'done' || ev.status === 'skipped';
+    const isPast = !isDone && new Date(ev.end_at || ev.start_at) < new Date();
+    const isUpcoming = !isDone && !isPast && new Date(ev.start_at) > new Date();
+    html += eventCardHtml(ev, isDone || isPast ? 'done' : '', false, isUpcoming);
+  }
+  html += `</div></div>`;
+  return html;
+}
+
+// Past DAYS (not today) — collapsed above everything
+function renderPastDays() {
+  const el  = document.getElementById('pastSection');
+  const now = new Date();
+  const groups = groupByDay(events);
+  const pastGroups = Object.entries(groups).filter(([, evs]) =>
+    evs.every(ev => new Date(ev.end_at || ev.start_at) < now) &&
+    !sameDay(new Date(evs[0].start_at), now)
+  );
+  if (!pastGroups.length) { el.innerHTML = ''; return; }
+  let html = '';
+  pastGroups.forEach(([day, evs], i) => { html += dayBandHtml(day, evs, true, i); });
+  el.innerHTML = html;
+  bindCardActions(el);
+}
+
+// Today's already-finished events — shown faded above NOW, no day title
+function renderTodayPast() {
+  const el  = document.getElementById('todayPastSection');
+  const now = new Date();
+  const ctx = scheduleContext();
+  const currentId = ctx.current?.id;
+  const todayPast = events
+    .filter(ev => sameDay(new Date(ev.start_at), now) &&
+      new Date(ev.end_at || ev.start_at) < now &&
+      ev.id !== currentId)
+    .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+  if (!todayPast.length) { el.innerHTML = ''; return; }
+  let html = '';
+  for (const ev of todayPast) html += eventCardHtml(ev, 'done', false, false);
+  el.innerHTML = html;
+  bindCardActions(el);
+}
+
+// NOW + all remaining today's events under UP NEXT
 function renderCurrent() {
   const el  = document.getElementById('currentSection');
   const ctx = scheduleContext();
+  const now = new Date();
 
   if (!ctx.current && !ctx.next) { el.innerHTML = ''; return; }
 
@@ -922,100 +995,49 @@ function renderCurrent() {
     html += eventCardHtml(ctx.current, 'current', true);
   }
 
-  if (ctx.next) {
+  // All upcoming events for today after current
+  const currentId = ctx.current?.id;
+  const todayUpcoming = events
+    .filter(ev => sameDay(new Date(ev.start_at), now) &&
+      ev.id !== currentId &&
+      ev.status !== 'done' && ev.status !== 'skipped' &&
+      new Date(ev.start_at) >= now)
+    .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+
+  // If no current event, also show first upcoming from any day as the top "up next"
+  const upNextList = todayUpcoming.length
+    ? todayUpcoming
+    : (ctx.next ? [ctx.next] : []);
+
+  if (upNextList.length) {
     html += `<div class="section-label">Up next</div>`;
-    html += eventCardHtml(ctx.next, '', false, true);
+    for (const ev of upNextList) html += eventCardHtml(ev, '', false, true);
   }
 
   el.innerHTML = html;
   bindCardActions(el);
 }
 
-function renderPastDays() {
-  const el     = document.getElementById('pastSection');
-  const sorted = [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
-  const now    = new Date();
-
-  const groups = {};
-  for (const ev of sorted) {
-    const day = formatDay(ev.start_at);
-    if (!groups[day]) groups[day] = [];
-    groups[day].push(ev);
-  }
-
-  const pastGroups = Object.entries(groups).filter(([, evs]) =>
-    evs.every(ev => new Date(ev.end_at || ev.start_at) < now)
-  );
-
-  if (!pastGroups.length) { el.innerHTML = ''; return; }
-
-  let html = '';
-  let dayIdx = 0;
-  for (const [day, dayEvents] of pastGroups) {
-    const bandClass = `day-band-${Math.min(dayIdx, 3)}`;
-    html += `<div class="${bandClass}">`;
-    html += `<div class="day-header collapsible collapsed" onclick="toggleDay(this)">
-      ${day}
-      <span class="day-chevron"><i data-lucide="chevron-down"></i></span>
-    </div>`;
-    html += `<div class="day-cards collapsed">`;
-    for (const ev of dayEvents) {
-      html += eventCardHtml(ev, 'done', false, false);
-    }
-    html += `</div></div>`;
-    dayIdx++;
-  }
-
-  el.innerHTML = html;
-  bindCardActions(el);
-}
-
+// Future days only (not today) — expanded by default
 function renderSchedule() {
-  const el     = document.getElementById('scheduleSection');
-  const sorted = [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+  const el  = document.getElementById('scheduleSection');
+  const now = new Date();
 
-  if (!sorted.length) {
-    el.innerHTML = isAdmin
-      ? ''
-      : `<div class="empty"><div class="empty-icon">🗺️</div><p>No events yet.</p></div>`;
+  if (!events.length) {
+    el.innerHTML = isAdmin ? '' : `<div class="empty"><div class="empty-icon">🗺️</div><p>No events yet.</p></div>`;
     return;
   }
 
-  // Group by day
-  const groups = {};
-  for (const ev of sorted) {
-    const day = formatDay(ev.start_at);
-    if (!groups[day]) groups[day] = [];
-    groups[day].push(ev);
-  }
-
-  const now = new Date();
-  const futureGroups = Object.entries(groups).filter(([, evs]) =>
+  const groups = groupByDay(events);
+  const futureDayGroups = Object.entries(groups).filter(([, evs]) =>
+    !sameDay(new Date(evs[0].start_at), now) &&
     !evs.every(ev => new Date(ev.end_at || ev.start_at) < now)
   );
 
-  if (!futureGroups.length) { el.innerHTML = ''; return; }
+  if (!futureDayGroups.length) { el.innerHTML = ''; return; }
 
   let html = `<div class="section-label">Full schedule</div>`;
-  let dayIdx = 0;
-  for (const [day, dayEvents] of futureGroups) {
-    const bandClass = `day-band-${Math.min(dayIdx, 3)}`;
-    html += `<div class="${bandClass}">`;
-    html += `<div class="day-header collapsible" onclick="toggleDay(this)">
-      ${day}
-      <span class="day-chevron"><i data-lucide="chevron-down"></i></span>
-    </div>`;
-    html += `<div class="day-cards">`;
-    for (const ev of dayEvents) {
-      const isDone = ev.status === 'done' || ev.status === 'skipped';
-      const isPast = !isDone && new Date(ev.end_at || ev.start_at) < now;
-      const isUpcoming = !isDone && !isPast && new Date(ev.start_at) > now;
-      const extraClass = isDone || isPast ? 'done' : '';
-      html += eventCardHtml(ev, extraClass, false, isUpcoming);
-    }
-    html += `</div></div>`;
-    dayIdx++;
-  }
+  futureDayGroups.forEach(([day, evs], i) => { html += dayBandHtml(day, evs, false, i); });
 
   el.innerHTML = html;
   bindCardActions(el);
