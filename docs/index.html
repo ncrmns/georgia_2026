@@ -214,6 +214,54 @@
     .type-option.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
     .type-icon-lbl { font-size: 20px; display: block; margin-bottom: 4px; }
 
+    /* ── Icon picker ── */
+    .icon-picker { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .icon-quick {
+      font-size: 22px; width: 40px; height: 40px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: var(--surface2);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: border-color .15s;
+    }
+    .icon-quick:hover, .icon-quick.selected { border-color: var(--accent); background: var(--accent-dim); }
+    .icon-custom-input {
+      flex: 1; min-width: 60px; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius-sm); padding: 8px 10px;
+      font-size: 20px; outline: none; text-align: center;
+    }
+    .icon-custom-input:focus { border-color: var(--accent); }
+    .icon-custom-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Travel vehicle picker ── */
+    .vehicle-picker { display: flex; gap: 8px; }
+    .vehicle-opt {
+      flex: 1; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 10px; text-align: center; cursor: pointer; font-size: 13px;
+      font-weight: 600; color: var(--muted); transition: all .15s;
+    }
+    .vehicle-opt.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .vehicle-opt span { font-size: 22px; display: block; margin-bottom: 3px; }
+
+    /* ── Color accent picker ── */
+    .color-picker { display: flex; gap: 8px; }
+    .color-dot {
+      width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent; transition: border-color .15s; flex-shrink: 0;
+    }
+    .color-dot.selected { border-color: #fff; }
+    .color-dot.none { background: var(--surface2); border: 2px solid var(--border); }
+
+    /* ── Card color accent ── */
+    .card[data-color]::before {
+      content: ''; position: absolute; left: 0; top: 10px; bottom: 10px;
+      width: 3px; border-radius: 2px;
+    }
+    .card[data-color="red"]::before    { background: var(--red); }
+    .card[data-color="blue"]::before   { background: var(--accent); }
+    .card[data-color="green"]::before  { background: var(--green); }
+    .card[data-color="orange"]::before { background: var(--orange); }
+    .card[data-color="purple"]::before { background: var(--purple); }
+    .card[data-color]:not([data-color=""]) { padding-left: 20px; overflow: hidden; }
+
     .save-btn {
       width: 100%; background: var(--accent); color: #fff; border: none;
       border-radius: var(--radius-sm); padding: 14px; font-size: 16px;
@@ -280,6 +328,46 @@
       </div>
     </div>
 
+    <!-- Vehicle picker — shown only for travel -->
+    <div class="field" id="vehicleField" style="display:none">
+      <label>Vehicle</label>
+      <div class="vehicle-picker">
+        <div class="vehicle-opt selected" data-vehicle="🚗"><span>🚗</span>Car</div>
+        <div class="vehicle-opt" data-vehicle="✈️"><span>✈️</span>Plane</div>
+        <div class="vehicle-opt" data-vehicle="🚂"><span>🚂</span>Train</div>
+        <div class="vehicle-opt" data-vehicle="🚌"><span>🚌</span>Bus</div>
+      </div>
+    </div>
+
+    <!-- Custom icon — shown for activity & deadline -->
+    <div class="field" id="iconField">
+      <label>Icon</label>
+      <div class="icon-picker">
+        <div class="icon-quick selected" data-icon="📍">📍</div>
+        <div class="icon-quick" data-icon="🍷">🍷</div>
+        <div class="icon-quick" data-icon="🍽️">🍽️</div>
+        <div class="icon-quick" data-icon="🏛️">🏛️</div>
+        <div class="icon-quick" data-icon="🏊">🏊</div>
+        <div class="icon-quick" data-icon="🎵">🎵</div>
+        <div class="icon-quick" data-icon="🛏️">🛏️</div>
+        <div class="icon-quick" data-icon="⏰">⏰</div>
+        <input class="icon-custom-input" id="fIcon" maxlength="2" placeholder="✏️" title="Or type any emoji" />
+      </div>
+      <div class="icon-custom-hint">Tap a quick icon or type any emoji in the box →</div>
+    </div>
+
+    <div class="field">
+      <label>Accent colour</label>
+      <div class="color-picker">
+        <div class="color-dot none selected" data-color=""></div>
+        <div class="color-dot" data-color="blue"   style="background:#4f8ef7"></div>
+        <div class="color-dot" data-color="green"  style="background:#34c759"></div>
+        <div class="color-dot" data-color="orange" style="background:#ff9f0a"></div>
+        <div class="color-dot" data-color="red"    style="background:#ff453a"></div>
+        <div class="color-dot" data-color="purple" style="background:#bf5af2"></div>
+      </div>
+    </div>
+
     <div class="field">
       <label>Title</label>
       <input type="text" id="fTitle" placeholder="e.g. Wine tasting" />
@@ -336,11 +424,14 @@ function demoEvents() {
 // ─────────────────────────────────────────────
 const sb = DEMO_MODE ? null : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let events       = [];
-let isAdmin      = false;
-let editingId    = null;
-let selectedType = 'activity';
-let refreshTimer = null;
+let events        = [];
+let isAdmin       = false;
+let editingId     = null;
+let selectedType  = 'activity';
+let selectedIcon  = '📍';
+let selectedVehicle = '🚗';
+let selectedColor = '';
+let refreshTimer  = null;
 
 // ─────────────────────────────────────────────
 // Auth
@@ -471,8 +562,9 @@ function formatDay(iso) {
   return new Date(iso).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
-function typeIcon(type) {
-  return { deadline: '⏰', travel: '🚗', activity: '📍' }[type] || '📍';
+function eventIcon(ev) {
+  if (ev.type === 'travel') return ev.icon || '🚗';
+  return ev.icon || (ev.type === 'deadline' ? '⏰' : '📍');
 }
 
 function typeClass(type) {
@@ -621,10 +713,11 @@ function eventCardHtml(ev, extraClass = '', showProgress = false) {
       <button class="action-btn danger" onclick="removeEvent('${ev.id}')">🗑 Remove</button>
     </div>`;
 
+  const colorAttr = ev.color ? ` data-color="${ev.color}"` : '';
   return `
-    <div class="card ${extraClass}" data-id="${ev.id}">
+    <div class="card ${extraClass}"${colorAttr} data-id="${ev.id}">
       <div class="card-header">
-        <div class="card-icon ${typeClass(ev.type)}">${typeIcon(ev.type)}</div>
+        <div class="card-icon ${typeClass(ev.type)}">${eventIcon(ev)}</div>
         <div class="card-body">
           <div class="card-title">${escHtml(ev.title)}</div>
           <div class="card-meta">
@@ -683,11 +776,57 @@ function closeModal() {
 // ─────────────────────────────────────────────
 // Form
 // ─────────────────────────────────────────────
+
+// Type picker
 document.querySelectorAll('.type-option').forEach(opt => {
   opt.addEventListener('click', () => {
     document.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
     opt.classList.add('selected');
     selectedType = opt.dataset.type;
+    updateFormForType();
+  });
+});
+
+function updateFormForType() {
+  const isTravel = selectedType === 'travel';
+  document.getElementById('vehicleField').style.display = isTravel ? '' : 'none';
+  document.getElementById('iconField').style.display    = isTravel ? 'none' : '';
+}
+
+// Vehicle picker
+document.querySelectorAll('.vehicle-opt').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.vehicle-opt').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    selectedVehicle = opt.dataset.vehicle;
+  });
+});
+
+// Quick icon picker
+document.querySelectorAll('.icon-quick').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.icon-quick').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    selectedIcon = opt.dataset.icon;
+    document.getElementById('fIcon').value = '';
+  });
+});
+
+// Custom emoji input
+document.getElementById('fIcon').addEventListener('input', (e) => {
+  const val = e.target.value.trim();
+  if (val) {
+    selectedIcon = val;
+    document.querySelectorAll('.icon-quick').forEach(o => o.classList.remove('selected'));
+  }
+});
+
+// Color picker
+document.querySelectorAll('.color-dot').forEach(dot => {
+  dot.addEventListener('click', () => {
+    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+    dot.classList.add('selected');
+    selectedColor = dot.dataset.color;
   });
 });
 
@@ -703,11 +842,44 @@ function fromLocalInput(val) {
   return new Date(val).toISOString();
 }
 
+function setSelectedIcon(icon) {
+  selectedIcon = icon || '📍';
+  document.querySelectorAll('.icon-quick').forEach(o => {
+    o.classList.toggle('selected', o.dataset.icon === selectedIcon);
+  });
+  // If no quick match, show in the input
+  const hasQuick = [...document.querySelectorAll('.icon-quick')].some(o => o.dataset.icon === selectedIcon);
+  document.getElementById('fIcon').value = hasQuick ? '' : selectedIcon;
+}
+
+function setSelectedVehicle(icon) {
+  selectedVehicle = icon || '🚗';
+  document.querySelectorAll('.vehicle-opt').forEach(o => {
+    o.classList.toggle('selected', o.dataset.vehicle === selectedVehicle);
+  });
+}
+
+function setSelectedColor(color) {
+  selectedColor = color || '';
+  document.querySelectorAll('.color-dot').forEach(d => {
+    d.classList.toggle('selected', d.dataset.color === selectedColor);
+  });
+}
+
 function populateForm(ev) {
   selectedType = ev.type || 'activity';
   document.querySelectorAll('.type-option').forEach(o => {
     o.classList.toggle('selected', o.dataset.type === selectedType);
   });
+  updateFormForType();
+
+  if (selectedType === 'travel') {
+    setSelectedVehicle(ev.icon);
+  } else {
+    setSelectedIcon(ev.icon || (selectedType === 'deadline' ? '⏰' : '📍'));
+  }
+  setSelectedColor(ev.color);
+
   document.getElementById('fTitle').value = ev.title || '';
   document.getElementById('fStart').value = toLocalInput(ev.start_at);
   document.getElementById('fEnd').value   = toLocalInput(ev.end_at);
@@ -719,6 +891,10 @@ function resetForm() {
   document.querySelectorAll('.type-option').forEach(o => {
     o.classList.toggle('selected', o.dataset.type === 'activity');
   });
+  updateFormForType();
+  setSelectedIcon('📍');
+  setSelectedVehicle('🚗');
+  setSelectedColor('');
   document.getElementById('fTitle').value = '';
   document.getElementById('fStart').value = '';
   document.getElementById('fEnd').value   = '';
@@ -730,10 +906,14 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   const start = document.getElementById('fStart').value;
   if (!title || !start) { alert('Title and start time are required.'); return; }
 
+  const resolvedIcon = selectedType === 'travel' ? selectedVehicle : selectedIcon;
+
   const ev = {
     id:       editingId || undefined,
     type:     selectedType,
     title,
+    icon:     resolvedIcon || null,
+    color:    selectedColor || null,
     start_at: fromLocalInput(start),
     end_at:   fromLocalInput(document.getElementById('fEnd').value) || null,
     notes:    document.getElementById('fNotes').value.trim() || null,

@@ -4,7 +4,7 @@
     {
       "name": "georgia-web",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-p", "3456", "web"],
+      "runtimeArgs": ["serve", "-p", "3456", "docs"],
       "port": 3456
     }
   ]
