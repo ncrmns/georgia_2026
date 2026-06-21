@@ -107,6 +107,7 @@
     .badge-done     { background: rgba(52,199,89,.2);  color: var(--green); }
     .badge-active   { background: rgba(79,142,247,.2); color: var(--accent); }
     .badge-upcoming { background: var(--surface2);     color: var(--muted); }
+    .starts-in { font-size: 12px; color: var(--accent); font-weight: 600; margin-left: auto; }
 
     /* ── Progress bar ── */
     .progress-wrap { margin-top: 12px; }
@@ -753,7 +754,7 @@ function renderCurrent() {
 
   if (ctx.next) {
     html += `<div class="section-label">Up next</div>`;
-    html += eventCardHtml(ctx.next, '');
+    html += eventCardHtml(ctx.next, '', false, true);
   }
 
   el.innerHTML = html;
@@ -784,7 +785,8 @@ function renderSchedule() {
     html += `<div class="day-header">${day}</div>`;
     for (const ev of dayEvents) {
       const isDone = ev.status === 'done' || ev.status === 'skipped';
-      html += eventCardHtml(ev, isDone ? 'done' : '');
+      const isUpcoming = !isDone && new Date(ev.start_at) > new Date();
+      html += eventCardHtml(ev, isDone ? 'done' : '', false, isUpcoming);
     }
   }
 
@@ -792,10 +794,12 @@ function renderSchedule() {
   bindCardActions(el);
 }
 
-function eventCardHtml(ev, extraClass = '', showProgress = false) {
+function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn = false) {
   const p   = progress(ev);
   const end = ev.end_at ? ` – ${formatTime(ev.end_at)}` : '';
   const isLate = new Date() > new Date(ev.end_at || ev.start_at) && ev.status !== 'done';
+  const startsInMs = new Date(ev.start_at) - new Date();
+  const startsInLabel = showStartsIn && startsInMs > 0 ? `<span class="starts-in">in ${formatTimeLeft(startsInMs).replace(' left','')}</span>` : '';
 
   let progressHtml = '';
   if (showProgress && p !== null) {
@@ -837,7 +841,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false) {
           <div class="card-title">${escHtml(ev.title)}</div>
           <div class="card-meta">
             <span class="card-time">${formatTime(ev.start_at)}${end}</span>
-            ${badgeHtml(ev)}
+            ${badgeHtml(ev)}${startsInLabel}
           </div>
         </div>
       </div>
