@@ -848,7 +848,17 @@ window.saveNote = async () => {
   const input = document.getElementById('noteInput');
   const text = input?.value.trim();
   if (!text) return;
-  await sb.from('events').insert({ trip_id: TRIP_ID, type: 'note', title: text, start_at: new Date().toISOString(), status: 'upcoming' });
+  input.disabled = true;
+  const { error } = await sb.from('events').insert({
+    trip_id: TRIP_ID,
+    type: 'note',
+    title: text,
+    start_at: new Date().toISOString(),
+    status: 'upcoming'
+  });
+  input.disabled = false;
+  if (error) { alert('Failed to save note: ' + error.message); return; }
+  input.value = '';
   await loadEvents();
 };
 
