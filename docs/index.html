@@ -730,6 +730,10 @@ function formatTime(iso) {
 
 function formatTimeLeft(ms) {
   if (ms <= 0) return 'overtime';
+  if (ms > 36 * 3600000) {
+    const days = Math.ceil(ms / 86400000);
+    return `${days}d left`;
+  }
   const totalMin = Math.ceil(ms / 60000);
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
