@@ -774,10 +774,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false) {
   let notesHtml = '';
   if (ev.notes) {
     notesHtml = `
-      <div class="card-notes">
-        <div class="card-notes-label">ℹ️ Info</div>
-        ${escHtml(ev.notes)}
-      </div>`;
+      <div class="card-notes">${escHtml(ev.notes)}</div>`;
   }
 
   const adminHtml = `
