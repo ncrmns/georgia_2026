@@ -392,12 +392,25 @@
 
     /* ── Status visual: NOW glow, past fade ── */
     .card.current {
-      box-shadow: 0 0 0 1px var(--accent), 0 0 18px -4px color-mix(in srgb, var(--accent) 50%, transparent);
-      animation: glow-pulse 3s ease-in-out infinite;
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent),
+        0 0 20px 0px color-mix(in srgb, var(--accent) 25%, transparent),
+        0 0 60px 0px color-mix(in srgb, var(--accent) 10%, transparent);
+      animation: glow-pulse 4s ease-in-out infinite;
     }
     @keyframes glow-pulse {
-      0%, 100% { box-shadow: 0 0 0 1px var(--accent), 0 0 18px -4px color-mix(in srgb, var(--accent) 50%, transparent); }
-      50%       { box-shadow: 0 0 0 1px var(--accent), 0 0 28px -2px color-mix(in srgb, var(--accent) 70%, transparent); }
+      0%, 100% {
+        box-shadow:
+          0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent),
+          0 0 14px 0px color-mix(in srgb, var(--accent) 15%, transparent),
+          0 0 40px 0px color-mix(in srgb, var(--accent) 5%, transparent);
+      }
+      50% {
+        box-shadow:
+          0 0 0 1px color-mix(in srgb, var(--accent) 80%, transparent),
+          0 0 28px 4px color-mix(in srgb, var(--accent) 35%, transparent),
+          0 0 70px 8px color-mix(in srgb, var(--accent) 12%, transparent);
+      }
     }
     .card.done   { opacity: .35; filter: saturate(.4); }
     .card.dimmed { opacity: .5;  filter: saturate(.5); }
