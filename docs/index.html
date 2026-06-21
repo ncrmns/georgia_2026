@@ -174,9 +174,12 @@
       transition: all .15s;
     }
     .action-btn:hover        { border-color: var(--accent); color: var(--accent); }
-    .action-btn.danger:hover { border-color: var(--red);    color: var(--red); }
+    .action-btn.danger       { border-color: var(--red);    color: var(--red); }
+    .action-btn.danger:hover { border-color: var(--red);    color: var(--red); opacity: .8; }
     .action-btn.success      { border-color: var(--green);  color: var(--green); }
     .action-btn.advance      { border-color: var(--accent); color: var(--accent); }
+    .action-btn.edit         { border-color: var(--text);   color: var(--text); }
+    .action-btn.edit:hover   { border-color: #fff;          color: #fff; }
     .action-btn svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; margin-right: 4px; vertical-align: middle; }
     .modal-close svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; }
     .pinned-note-del svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.5; }
@@ -1104,10 +1107,10 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
 
   const adminHtml = `
     <div class="card-actions">
-      <button class="action-btn" onclick="openEdit('${ev.id}')"><i data-lucide="pencil"></i>Edit</button>
+      <button class="action-btn edit" onclick="openEdit('${ev.id}')"><i data-lucide="pencil"></i>Edit</button>
       <button class="action-btn success" onclick="markDone('${ev.id}')"><i data-lucide="check"></i>Done</button>
       <button class="action-btn advance" onclick="skipAdvance('${ev.id}')"><i data-lucide="skip-forward"></i>Skip</button>
-      <button class="action-btn danger" onclick="removeEvent('${ev.id}')"><i data-lucide="trash-2"></i>Remove</button>
+      <button class="action-btn danger" onclick="removeEvent('${ev.id}')"><i data-lucide="x"></i></button>
     </div>`;
 
   const colorStyle = ev.color ? ` style="--card-color:${ev.color}"` : '';
