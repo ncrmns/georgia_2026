@@ -449,6 +449,11 @@
       background: var(--green); display: inline-block; margin-left: 6px;
       animation: pulse 2s infinite;
     }
+    .refresh-dot.offline {
+      background: var(--muted);
+      animation: none;
+      opacity: .5;
+    }
     @keyframes pulse {
       0%, 100% { opacity: 1; } 50% { opacity: .3; }
     }
@@ -926,6 +931,7 @@ function renderPinned() {
 function renderHeader() {
   document.getElementById('tripTitle').innerHTML =
     'Georgia 2026 <span class="refresh-dot"></span>';
+  updateDotOnlineState();
 
   const sorted = [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
   if (sorted.length) {
@@ -1455,6 +1461,18 @@ function startRefresh() {
 // ─────────────────────────────────────────────
 // Boot
 // ─────────────────────────────────────────────
+
+function updateDotOnlineState() {
+  const dot = document.querySelector('.refresh-dot');
+  if (!dot) return;
+  if (navigator.onLine) {
+    dot.classList.remove('offline');
+  } else {
+    dot.classList.add('offline');
+  }
+}
+window.addEventListener('online',  updateDotOnlineState);
+window.addEventListener('offline', updateDotOnlineState);
 
 loadEvents();
 startTick();
