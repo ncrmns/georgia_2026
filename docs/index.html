@@ -123,20 +123,26 @@
     }
     .progress-fill {
       height: 100%; border-radius: 2px;
-      background: var(--accent); transition: width .5s ease;
-      animation: bar-glow 4s ease-in-out infinite;
+      background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 80%, #fff));
+      transition: width .5s ease; position: relative; overflow: hidden;
+    }
+    .progress-fill::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        color-mix(in srgb, #fff 35%, transparent) 50%,
+        transparent 100%);
+      transform: translateX(-100%);
+      animation: bar-sweep 2.5s ease-in-out infinite;
     }
     .progress-fill.late {
-      background: var(--red);
-      animation: bar-glow-late 4s ease-in-out infinite;
+      background: linear-gradient(90deg, var(--red), color-mix(in srgb, var(--red) 80%, #fff));
     }
-    @keyframes bar-glow {
-      0%, 100% { filter: drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 40%, transparent)); }
-      50%       { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 80%, transparent)); }
-    }
-    @keyframes bar-glow-late {
-      0%, 100% { filter: drop-shadow(0 0 2px color-mix(in srgb, var(--red) 40%, transparent)); }
-      50%       { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--red) 80%, transparent)); }
+    @keyframes bar-sweep {
+      0%   { transform: translateX(-100%); opacity: 0; }
+      20%  { opacity: 1; }
+      80%  { opacity: 1; }
+      100% { transform: translateX(100%); opacity: 0; }
     }
     .progress-labels {
       display: flex; justify-content: space-between;
