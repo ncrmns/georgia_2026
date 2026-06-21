@@ -713,7 +713,7 @@ function renderHeader() {
       document.getElementById('countdown').innerHTML =
         `Starts in <strong>${days}d ${hours}h</strong>`;
     } else if (last > now) {
-      document.getElementById('countdown').innerHTML = '<strong>Trip is on! 🎉</strong>';
+      document.getElementById('countdown').innerHTML = '';
     } else {
       document.getElementById('countdown').textContent = 'Trip completed';
     }
