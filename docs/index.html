@@ -1188,10 +1188,11 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
     const isTracking = locationTracking.has(ev.id);
     const dist = locationDistances[ev.id];
     const distHtml = dist != null ? `<span class="loc-distance">${dist}</span>` : '';
+    locationLookup[ev.id] = ev.location;
     locationHtml = `<div class="card-location-row">
       <a class="card-location" href="${mapsUrl}" target="_blank" rel="noopener"><i data-lucide="map-pin"></i>${escHtml(short)}</a>
       ${distHtml}
-      <button class="loc-toggle${isTracking ? ' active' : ''}" onclick="toggleLocationTracking('${ev.id}', ${JSON.stringify(ev.location)})"><i data-lucide="navigation"></i>${isTracking ? 'On' : 'km'}</button>
+      <button class="loc-toggle${isTracking ? ' active' : ''}" onclick="toggleLocationTracking('${ev.id}')"><i data-lucide="navigation"></i>${isTracking ? 'On' : 'km'}</button>
     </div>`;
   }
 
@@ -1523,6 +1524,7 @@ function startRefresh() {
 const locationTracking   = new Set();   // card ids with tracking on
 const locationDistances  = {};          // card id -> formatted distance string
 const geocodeCache       = {};          // location string -> {lat, lng}
+const locationLookup     = {};          // card id -> location string (set during render)
 let   geoWatchId         = null;
 let   currentPosition    = null;
 
@@ -1576,7 +1578,9 @@ function startGeoWatch() {
   );
 }
 
-window.toggleLocationTracking = async (id, locationStr) => {
+window.toggleLocationTracking = async (id) => {
+  const locationStr = locationLookup[id];
+  if (!locationStr) return;
   if (locationTracking.has(id)) {
     locationTracking.delete(id);
     delete locationDistances[id];
