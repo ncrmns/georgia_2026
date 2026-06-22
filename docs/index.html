@@ -1617,14 +1617,12 @@ function updateDistances() {
   if (changed) render();
 }
 
-function startGeoWatch() {
-  if (geoWatchId !== null) return;
-  geoWatchId = navigator.geolocation.watchPosition(
+function fetchPosition() {
+  navigator.geolocation.getCurrentPosition(
     pos => {
       currentPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       geoError = null;
       updateDistances();
-      // Re-render so the travel distance progress bar updates
       const ctx = scheduleContext();
       if (ctx.current?.type === 'travel' && ctx.current?.icon !== 'plane') render();
     },
@@ -1633,10 +1631,17 @@ function startGeoWatch() {
       geoError = err.code === 1
         ? 'Location denied — enable it in Settings → Privacy & Security → Location Services'
         : 'Could not get location. Try again.';
+      if (geoWatchId !== null) { clearInterval(geoWatchId); geoWatchId = null; }
       render();
     },
-    { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+    { enableHighAccuracy: true, timeout: 15000 }
   );
+}
+
+function startGeoWatch() {
+  if (geoWatchId !== null) return;
+  fetchPosition();
+  geoWatchId = setInterval(fetchPosition, 120000);
 }
 
 window.enableTravelGps = (id) => {
@@ -1665,7 +1670,7 @@ window.toggleLocationTracking = async (id) => {
     locationTracking.delete(id);
     delete locationDistances[id];
     if (!locationTracking.size && geoWatchId !== null) {
-      navigator.geolocation.clearWatch(geoWatchId);
+      clearInterval(geoWatchId);
       geoWatchId = null;
     }
     render();
