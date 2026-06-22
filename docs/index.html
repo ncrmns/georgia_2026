@@ -1773,7 +1773,6 @@ function startGeoWatch() {
 window.toggleGlobalLocation = async () => {
   if (locationEnabled) {
     locationEnabled = false;
-    currentPosition = null;
     geoError = null;
     if (geoWatchId !== null) { clearInterval(geoWatchId); geoWatchId = null; }
     document.getElementById('navBtn')?.classList.remove('active');
@@ -1782,12 +1781,15 @@ window.toggleGlobalLocation = async () => {
   }
   locationEnabled = true;
   document.getElementById('navBtn')?.classList.add('active');
-  render(); // populates locationLookup
+  render(); // populates locationLookup, shows cached distances immediately if position known
   if (!navigator.geolocation) { geoError = 'Geolocation not supported.'; render(); return; }
   geoError = null;
   startGeoWatch();
-  // Kick off geocoding for all known locations (each will render when ready)
-  Object.values(locationLookup).forEach(locStr => geocode(locStr));
+  // Geocode all locations; re-render after each resolves so distances appear as soon as both GPS + geocode are ready
+  await Promise.all(Object.values(locationLookup).map(async locStr => {
+    await geocode(locStr);
+    if (locationEnabled && currentPosition) render();
+  }));
 };
 
 async function initTravelDist(ev) {
