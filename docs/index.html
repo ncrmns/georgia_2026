@@ -966,7 +966,7 @@ function renderPinned() {
       const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(n.title)}`;
       html += `<div class="pinned-note">
         <a class="pinned-note-address" href="${mapsUrl}" target="_blank" rel="noopener">
-          <i data-lucide="map-pin"></i><span>Address</span>${escHtml(n.title)}
+          <i data-lucide="map-pin"></i>${escHtml(n.title)}
         </a>
         <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
       </div>`;
