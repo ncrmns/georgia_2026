@@ -499,8 +499,9 @@
     /* ── Countdown ── */
     .countdown { font-size: 13px; color: var(--muted); margin-top: 2px; }
     .countdown strong { color: var(--accent); }
-    .geo-status { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .geo-status { display: none; font-size: 11px; color: var(--muted); margin-top: 3px; }
     .geo-status.error { color: var(--red); }
+    .is-admin .geo-status { display: block; }
 
     /* ── Card entrance ── */
     @keyframes card-in {
@@ -690,6 +691,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
+const BUILD = 1;
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
 // Demo events — used when Supabase isn't configured yet
@@ -1121,13 +1123,15 @@ function renderHeader() {
   }
   const geoEl = document.getElementById('geoStatus');
   if (geoEl) {
-    if (!locationEnabled) { geoEl.textContent = ''; geoEl.className = 'geo-status'; }
-    else if (geoError) { geoEl.textContent = `📍 ${geoError}`; geoEl.className = 'geo-status error'; }
-    else if (!currentPosition) { geoEl.textContent = '📍 Getting location…'; geoEl.className = 'geo-status'; }
+    const build = `build ${BUILD}`;
+    if (!locationEnabled) { geoEl.textContent = build; geoEl.className = 'geo-status'; }
+    else if (geoError) { geoEl.textContent = `${build} · 📍 ${geoError}`; geoEl.className = 'geo-status error'; }
+    else if (!currentPosition) { geoEl.textContent = `${build} · 📍 Getting location…`; geoEl.className = 'geo-status'; }
     else {
       const cached = Object.values(locationLookup).filter(l => geocodeCache[l]).length;
       const total  = Object.values(locationLookup).length;
-      geoEl.textContent = cached < total ? `📍 Geocoding ${cached}/${total}…` : `📍 ${currentPosition.lat.toFixed(4)}, ${currentPosition.lng.toFixed(4)}`;
+      const locStr = cached < total ? `📍 Geocoding ${cached}/${total}…` : `📍 ${currentPosition.lat.toFixed(4)}, ${currentPosition.lng.toFixed(4)}`;
+      geoEl.textContent = `${build} · ${locStr}`;
       geoEl.className = 'geo-status';
     }
   }
