@@ -1613,11 +1613,11 @@ function startGeoWatch() {
   if (geoWatchId !== null) return;
   geoWatchId = navigator.geolocation.watchPosition(
     pos => {
-      const prev = currentPosition;
       currentPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       updateDistances();
-      // Re-render if a non-plane travel card is active (for distance progress bar)
-      if (!prev) render();
+      // Re-render so the travel distance progress bar updates
+      const ctx = scheduleContext();
+      if (ctx.current?.type === 'travel' && ctx.current?.icon !== 'plane') render();
     },
     () => {},
     { enableHighAccuracy: false, maximumAge: 30000 }
