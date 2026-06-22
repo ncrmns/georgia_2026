@@ -665,10 +665,15 @@
 
     <div class="field-row">
       <div class="field">
-        <label>Start</label>
+        <label style="display:flex;align-items:center;gap:10px">Start
+          <label style="display:flex;align-items:center;gap:5px;font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;cursor:pointer">
+            <input type="checkbox" id="fAllDay" style="width:14px;height:14px;accent-color:var(--accent)"> All day
+          </label>
+        </label>
         <input type="datetime-local" id="fStart" />
+        <input type="date" id="fStartDate" style="display:none" />
       </div>
-      <div class="field">
+      <div class="field" id="fEndField">
         <label>End (optional)</label>
         <input type="datetime-local" id="fEnd" />
       </div>
@@ -700,7 +705,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 5;
+const BUILD = 7;
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
 // Demo events — used when Supabase isn't configured yet
@@ -831,6 +836,7 @@ function scheduleContext() {
 
   const currentIdx = sorted.findIndex(e => {
     if (e.status === 'done' || e.status === 'skipped') return false;
+    if (isAllDay(e)) return false;
     const start = new Date(e.start_at);
     const end   = e.end_at ? new Date(e.end_at) : null;
     if (!end) {
@@ -865,6 +871,7 @@ function scheduleContext() {
 }
 
 function progress(ev) {
+  if (isAllDay(ev)) return null;
   const now   = new Date();
   const start = new Date(ev.start_at);
   const end   = ev.end_at ? new Date(ev.end_at) : null;
@@ -876,6 +883,12 @@ function progress(ev) {
   const total   = end - start;
   const elapsed = now - start;
   return Math.max(0, Math.min(1, elapsed / total));
+}
+
+function isAllDay(ev) {
+  if (!ev?.start_at) return false;
+  const d = new Date(ev.start_at);
+  return d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0;
 }
 
 function formatTime(iso) {
@@ -1295,9 +1308,11 @@ function travelRouteHtml(ev) {
 }
 
 function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn = false) {
+  const allDay = isAllDay(ev);
   const p   = progress(ev);
-  const end = ev.end_at ? ` – ${formatTime(ev.end_at)}` : '';
-  const isLate = new Date() > new Date(ev.end_at || ev.start_at) && ev.status !== 'done';
+  const end = (!allDay && ev.end_at) ? ` – ${formatTime(ev.end_at)}` : '';
+  const timeDisplay = allDay ? `<span class="card-time" style="letter-spacing:0.02em">?</span>` : `<span class="card-time">${formatTime(ev.start_at)}${end}</span>`;
+  const isLate = !allDay && new Date() > new Date(ev.end_at || ev.start_at) && ev.status !== 'done';
   const startsInMs = new Date(ev.start_at) - new Date();
   const startsInLabel = showStartsIn && startsInMs > 0 ? `<span class="starts-in">in ${formatTimeLeft(startsInMs).replace(' left','')}</span>` : '';
   const typeClass2 = ev.type === 'travel' ? ' type-travel' : ev.type === 'deadline' ? ' type-deadline' : '';
@@ -1393,7 +1408,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
     <div class="card ${extraClass}${colorClass}${typeClass2}"${colorStyle} data-id="${ev.id}">
       ${routeHtml}
       ${showProgress && p !== null ? '' : `<div class="card-meta" style="margin-top:6px">
-        <span class="card-time">${formatTime(ev.start_at)}${end}</span>
+        ${timeDisplay}
         ${badgeHtml(ev)}${startsInLabel}
       </div>`}
       ${progressHtml}
@@ -1410,7 +1425,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
         <div class="card-body">
           <div class="card-title">${escHtml(ev.title)}</div>
           ${showProgress && p !== null ? '' : `<div class="card-meta">
-            <span class="card-time">${formatTime(ev.start_at)}${end}</span>
+            ${timeDisplay}
             ${badgeHtml(ev)}${startsInLabel}
           </div>`}
         </div>
@@ -1562,6 +1577,16 @@ attachLocAutocomplete('fLocation', 'locSuggestions');
 attachLocAutocomplete('fFrom', 'locSuggestionsFrom');
 attachLocAutocomplete('fTo', 'locSuggestionsTo');
 
+document.getElementById('fAllDay').addEventListener('change', function() {
+  const allDay = this.checked;
+  document.getElementById('fStart').style.display = allDay ? 'none' : '';
+  document.getElementById('fStartDate').style.display = allDay ? '' : 'none';
+  document.getElementById('fEndField').style.display = allDay ? 'none' : '';
+  if (allDay && document.getElementById('fStart').value) {
+    document.getElementById('fStartDate').value = document.getElementById('fStart').value.split('T')[0];
+  }
+});
+
 document.getElementById('addEventBtn').addEventListener('click', () => {
   editingId = null;
   resetForm();
@@ -1700,8 +1725,25 @@ function populateForm(ev) {
     document.getElementById('fFrom').value  = '';
     document.getElementById('fTo').value    = '';
   }
-  document.getElementById('fStart').value = toLocalInput(ev.start_at);
-  document.getElementById('fEnd').value   = toLocalInput(ev.end_at);
+  const allDayEv = isAllDay(ev);
+  document.getElementById('fAllDay').checked = allDayEv;
+  if (allDayEv) {
+    document.getElementById('fStart').style.display = 'none';
+    document.getElementById('fStartDate').style.display = '';
+    document.getElementById('fEndField').style.display = 'none';
+    const d = new Date(ev.start_at);
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    document.getElementById('fStartDate').value = `${yyyy}-${mm}-${dd}`;
+    document.getElementById('fEnd').value = '';
+  } else {
+    document.getElementById('fStart').style.display = '';
+    document.getElementById('fStartDate').style.display = 'none';
+    document.getElementById('fEndField').style.display = '';
+    document.getElementById('fStart').value = toLocalInput(ev.start_at);
+    document.getElementById('fEnd').value   = toLocalInput(ev.end_at);
+  }
   document.getElementById('fNotes').value    = ev.notes    || '';
   document.getElementById('fLocation').value = ev.location || '';
 }
@@ -1718,7 +1760,12 @@ function resetForm() {
   document.getElementById('fTitle').value = '';
   document.getElementById('fFrom').value  = '';
   document.getElementById('fTo').value    = '';
+  document.getElementById('fAllDay').checked = false;
+  document.getElementById('fStart').style.display = '';
+  document.getElementById('fStartDate').style.display = 'none';
+  document.getElementById('fEndField').style.display = '';
   document.getElementById('fStart').value    = '';
+  document.getElementById('fStartDate').value = '';
   document.getElementById('fEnd').value      = '';
   document.getElementById('fNotes').value    = '';
   document.getElementById('fLocation').value = '';
@@ -1731,8 +1778,16 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   const title = isTravel
     ? (from && to ? `${from} -> ${to}` : from || to || '')
     : document.getElementById('fTitle').value.trim();
-  const start = document.getElementById('fStart').value;
-  if (!title || !start) { alert((isTravel ? 'From/To' : 'Title') + ' and start time are required.'); return; }
+  const allDay = document.getElementById('fAllDay').checked;
+  const start = allDay ? document.getElementById('fStartDate').value : document.getElementById('fStart').value;
+  if (!title || !start) { alert((isTravel ? 'From/To' : 'Title') + ' and start ' + (allDay ? 'date' : 'time') + ' are required.'); return; }
+
+  let startAt;
+  if (allDay) {
+    startAt = start + 'T00:00:00.000Z';
+  } else {
+    startAt = fromLocalInput(start);
+  }
 
   const resolvedIcon = selectedType === 'travel' ? selectedVehicle : selectedIcon;
 
@@ -1742,8 +1797,8 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     title,
     icon:     resolvedIcon || null,
     color:    selectedColor || null,
-    start_at: fromLocalInput(start),
-    end_at:   fromLocalInput(document.getElementById('fEnd').value) || null,
+    start_at: startAt,
+    end_at:   allDay ? null : (fromLocalInput(document.getElementById('fEnd').value) || null),
     notes:    document.getElementById('fNotes').value.trim() || null,
     location: document.getElementById('fLocation').value.trim() || null,
     status:   editingId ? (events.find(e => e.id === editingId)?.status || 'upcoming') : 'upcoming',
