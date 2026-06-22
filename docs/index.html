@@ -196,14 +196,14 @@
     .pinned-note:last-child { border-bottom: none; }
     .pinned-note-text { flex: 1; color: var(--text); }
     .pinned-note-icon { width: 13px; height: 13px; stroke: var(--accent); flex-shrink: 0; pointer-events: none; }
-    .pinned-note[draggable] { user-select: none; }
-    .pinned-note[draggable] * { pointer-events: none; }
-    .pinned-note[draggable] button, .pinned-note[draggable] a { pointer-events: auto; }
+    .is-admin .pinned-note[data-note-id] { -webkit-user-select: none; user-select: none; touch-action: none; cursor: grab; }
+    .is-admin .pinned-note[data-note-id]:active { cursor: grabbing; }
+    .is-admin .pinned-note[data-note-id] button,
+    .is-admin .pinned-note[data-note-id] a { cursor: pointer; }
     .drag-handle {
-      display: none; cursor: grab; color: var(--muted); opacity: .4; padding: 0 2px;
+      display: none; color: var(--muted); opacity: .4; padding: 0 2px;
     }
-    .drag-handle:active { cursor: grabbing; }
-    .drag-handle svg { width: 14px; height: 14px; stroke: currentColor; }
+    .drag-handle svg { width: 14px; height: 14px; stroke: currentColor; pointer-events: none; }
     .is-admin .drag-handle { display: flex; align-items: center; }
     .is-admin .pinned-note[data-note-id] { cursor: grab; }
     .is-admin .pinned-note[data-note-id]:active { cursor: grabbing; }
@@ -978,7 +978,7 @@ function renderPinned() {
     const drag = `<span class="drag-handle"><i data-lucide="grip-vertical"></i></span>`;
     if (n.icon === 'map-pin') {
       const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(n.title)}`;
-      html += `<div class="pinned-note" data-note-id="${n.id}"${isAdmin ? ' draggable="true"' : ''}>
+      html += `<div class="pinned-note" data-note-id="${n.id}">
         ${drag}
         <a class="pinned-note-address" href="${mapsUrl}" target="_blank" rel="noopener" onclick="if(isAdmin){return false;}">
           <i data-lucide="map-pin"></i>${escHtml(n.title)}
@@ -986,7 +986,7 @@ function renderPinned() {
         <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
       </div>`;
     } else {
-      html += `<div class="pinned-note" data-note-id="${n.id}"${isAdmin ? ' draggable="true"' : ''}>
+      html += `<div class="pinned-note" data-note-id="${n.id}">
         ${drag}
         <i data-lucide="pin" class="pinned-note-icon"></i>
         <span class="pinned-note-text">${escHtml(n.title)}</span>
@@ -1017,45 +1017,80 @@ let dragSrcId = null;
 
 function bindNoteDrag(el) {
   if (!isAdmin) return;
-  const rows = el.querySelectorAll('.pinned-note[data-note-id]');
+  const rows = [...el.querySelectorAll('.pinned-note[data-note-id]')];
+
+  async function applyReorder(targetId) {
+    if (!targetId || targetId === dragSrcId) return;
+    const srcIdx = notes.findIndex(n => n.id == dragSrcId);
+    const tgtIdx = notes.findIndex(n => n.id == targetId);
+    if (srcIdx === -1 || tgtIdx === -1) return;
+    const [moved] = notes.splice(srcIdx, 1);
+    notes.splice(tgtIdx, 0, moved);
+    renderPinned(); lucide.createIcons();
+    if (!DEMO_MODE) {
+      const base = new Date('2000-01-01').getTime();
+      await Promise.all(notes.map((n, i) =>
+        sb.from('events').update({ start_at: new Date(base + i * 1000).toISOString() }).eq('id', n.id)
+      ));
+    }
+  }
+
+  function clearHighlight() {
+    rows.forEach(r => r.classList.remove('drag-over'));
+  }
+
+  function rowAtY(y) {
+    return rows.find(r => {
+      const rect = r.getBoundingClientRect();
+      return y >= rect.top && y <= rect.bottom;
+    });
+  }
 
   rows.forEach(row => {
-    row.draggable = true;
-    row.addEventListener('dragstart', e => {
+    // ── Mouse drag ──
+    row.addEventListener('mousedown', e => {
+      if (e.target.closest('button, a')) return;
       dragSrcId = row.dataset.noteId;
-      e.dataTransfer.effectAllowed = 'move';
-      setTimeout(() => row.style.opacity = '.4', 0);
-    });
-    row.addEventListener('dragend', () => { row.style.opacity = ''; });
+      row.style.opacity = '.4';
 
-    row.addEventListener('dragover', e => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      el.querySelectorAll('.pinned-note').forEach(r => r.classList.remove('drag-over'));
-      row.classList.add('drag-over');
-    });
-
-    row.addEventListener('drop', async e => {
-      e.preventDefault();
-      el.querySelectorAll('.pinned-note').forEach(r => r.classList.remove('drag-over'));
-      const targetId = row.dataset.noteId;
-      if (!targetId || targetId === dragSrcId) return;
-
-      const srcIdx = notes.findIndex(n => n.id == dragSrcId);
-      const tgtIdx = notes.findIndex(n => n.id == targetId);
-      if (srcIdx === -1 || tgtIdx === -1) return;
-      const [moved] = notes.splice(srcIdx, 1);
-      notes.splice(tgtIdx, 0, moved);
-
-      renderPinned();
-      lucide.createIcons();
-
-      if (!DEMO_MODE) {
-        const base = new Date('2000-01-01').getTime();
-        await Promise.all(notes.map((n, i) =>
-          sb.from('events').update({ start_at: new Date(base + i * 1000).toISOString() }).eq('id', n.id)
-        ));
+      function onMouseMove(e) {
+        const target = rowAtY(e.clientY);
+        clearHighlight();
+        if (target && target !== row) target.classList.add('drag-over');
       }
+      async function onMouseUp(e) {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        row.style.opacity = '';
+        clearHighlight();
+        const target = rowAtY(e.clientY);
+        await applyReorder(target?.dataset.noteId);
+      }
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    // ── Touch drag ──
+    row.addEventListener('touchstart', e => {
+      if (e.target.closest('button, a')) return;
+      dragSrcId = row.dataset.noteId;
+      row.style.opacity = '.4';
+    }, { passive: true });
+
+    row.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const target = rowAtY(touch.clientY);
+      clearHighlight();
+      if (target && target !== row) target.classList.add('drag-over');
+    }, { passive: false });
+
+    row.addEventListener('touchend', async e => {
+      const touch = e.changedTouches[0];
+      row.style.opacity = '';
+      clearHighlight();
+      const target = rowAtY(touch.clientY);
+      await applyReorder(target?.dataset.noteId);
     });
   });
 }
