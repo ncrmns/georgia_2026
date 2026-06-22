@@ -194,7 +194,8 @@
       font-size: 14px; color: var(--muted);
     }
     .pinned-note:last-child { border-bottom: none; }
-    .pinned-note-text { flex: 1; }
+    .pinned-note-text { flex: 1; color: var(--text); }
+    .pinned-note-icon { width: 13px; height: 13px; stroke: var(--accent); flex-shrink: 0; }
     .drag-handle {
       display: none; cursor: grab; color: var(--muted); opacity: .4; padding: 0 2px;
     }
@@ -984,6 +985,7 @@ function renderPinned() {
     } else {
       html += `<div class="pinned-note" data-note-id="${n.id}"${isAdmin ? ' draggable="true"' : ''}>
         ${drag}
+        <i data-lucide="pin" class="pinned-note-icon"></i>
         <span class="pinned-note-text">${escHtml(n.title)}</span>
         <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
       </div>`;
