@@ -1750,7 +1750,6 @@ function fetchPosition() {
           if (remKm < 1) { setStatus(ctx.current.id, 'done'); return; }
         }
       }
-      updateDistances();
       if (locationEnabled) render();
     },
     (err) => {
