@@ -1624,7 +1624,11 @@ function startGeoWatch() {
       const ctx = scheduleContext();
       if (ctx.current?.type === 'travel' && ctx.current?.icon !== 'plane') render();
     },
-    (err) => { geoWatchId = null; currentPosition = null; render(); },
+    (err) => {
+      geoWatchId = null; currentPosition = null;
+      if (err.code === 1) alert('Location access denied. Please enable it in your browser settings and try again.');
+      render();
+    },
     { enableHighAccuracy: false, maximumAge: 30000 }
   );
 }
