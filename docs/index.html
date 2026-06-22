@@ -1624,7 +1624,14 @@ function fetchPosition() {
       geoError = null;
       updateDistances();
       const ctx = scheduleContext();
-      if (ctx.current?.type === 'travel' && ctx.current?.icon !== 'plane') render();
+      if (ctx.current?.type === 'travel' && ctx.current?.icon !== 'plane') {
+        const cache = travelDistCache[ctx.current.id];
+        if (cache && cache !== 'loading' && cache !== 'error') {
+          const remKm = haversineKm(currentPosition.lat, currentPosition.lng, cache.toCoords.lat, cache.toCoords.lng);
+          if (remKm < 1) { setStatus(ctx.current.id, 'done'); return; }
+        }
+        render();
+      }
     },
     (err) => {
       geoWatchId = null; currentPosition = null;
