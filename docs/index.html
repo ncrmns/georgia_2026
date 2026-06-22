@@ -1158,7 +1158,12 @@ function sameDay(a, b) {
 
 function groupByDay(evList) {
   const groups = {};
-  for (const ev of [...evList].sort((a, b) => new Date(a.start_at) - new Date(b.start_at))) {
+  for (const ev of [...evList].sort((a, b) => {
+    const aAllDay = isAllDay(a) ? 1 : 0;
+    const bAllDay = isAllDay(b) ? 1 : 0;
+    if (aAllDay !== bAllDay) return aAllDay - bAllDay;
+    return new Date(a.start_at) - new Date(b.start_at);
+  })) {
     const day = formatDay(ev.start_at);
     if (!groups[day]) groups[day] = [];
     groups[day].push(ev);
