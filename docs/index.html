@@ -310,6 +310,13 @@
     .loc-suggestion:last-child { border-bottom: none; }
     .loc-suggestion:hover, .loc-suggestion.active { background: var(--surface); color: var(--accent); }
     .loc-suggestion small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .poi-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 6px; }
+    .poi-row:last-child { margin-bottom: 0; }
+    .poi-remove { width: 32px; height: 38px; flex-shrink: 0; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .poi-remove svg { width: 14px; height: 14px; }
+    @media (hover: hover) { .poi-remove:hover { border-color: var(--red); color: var(--red); } }
+    .add-poi-btn { margin-top: 8px; background: none; border: 1px dashed var(--border); border-radius: var(--radius-sm); color: var(--muted); font-size: 12px; padding: 7px 12px; cursor: pointer; width: 100%; text-align: left; }
+    @media (hover: hover) { .add-poi-btn:hover { border-color: var(--accent); color: var(--accent); } }
     .field-row { display: flex; flex-direction: column; gap: 12px; }
 
     .type-picker { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
@@ -687,6 +694,12 @@
       </div>
     </div>
 
+    <div class="field" id="poisField">
+      <label>More locations <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <div id="poiList"></div>
+      <button type="button" class="add-poi-btn" onclick="addPoi()">+ Add location</button>
+    </div>
+
     <div class="field">
       <label>Notes / info <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
       <textarea id="fNotes" placeholder="e.g. Airbnb entry code: 1234&#10;Meet at the front gate"></textarea>
@@ -705,7 +718,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 7;
+const BUILD = 8;
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
 // Demo events — used when Supabase isn't configured yet
@@ -1378,22 +1391,27 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
       <div class="card-notes">${escHtml(ev.notes)}</div>`;
   }
 
-  let locationHtml = '';
-  if (ev.location) {
-    const short = ev.location.split(',')[0].trim();
-    const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(ev.location)}`;
-    locationLookup[ev.id] = ev.location;
+  function locationRowHtml(locStr, lookupKey) {
+    locationLookup[lookupKey] = locStr;
+    const short = locStr.split(',')[0].trim();
+    const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(locStr)}`;
     let distHtml = '';
-    if (locationEnabled && currentPosition && geocodeCache[ev.location]) {
-      const c = geocodeCache[ev.location];
+    if (locationEnabled && currentPosition && geocodeCache[locStr]) {
+      const c = geocodeCache[locStr];
       const km = haversineKm(currentPosition.lat, currentPosition.lng, c.lat, c.lng);
       distHtml = `<span class="loc-distance">${formatKm(km)}</span>`;
     }
-    locationHtml = `<div class="card-location-row">
+    return `<div class="card-location-row">
       <a class="card-location" href="${mapsUrl}" target="_blank" rel="noopener"><i data-lucide="map-pin"></i>${escHtml(short)}</a>
       ${distHtml}
     </div>`;
   }
+
+  let locationHtml = '';
+  const locRows = [];
+  if (ev.location) locRows.push(locationRowHtml(ev.location, ev.id));
+  (ev.locations || []).forEach((loc, i) => { if (loc) locRows.push(locationRowHtml(loc, `${ev.id}_poi_${i}`)); });
+  locationHtml = locRows.join('');
 
   const adminHtml = `
     <div class="card-actions">
@@ -1513,8 +1531,10 @@ window.openEdit = (id) => {
 
 // ── Location autocomplete ──
 function attachLocAutocomplete(inputId, boxId) {
-  const input = document.getElementById(inputId);
-  const box   = document.getElementById(boxId);
+  attachLocAutocompleteEl(document.getElementById(inputId), document.getElementById(boxId));
+}
+
+function attachLocAutocompleteEl(input, box) {
   let timer, activeIdx = -1, results = [];
 
   async function search(q) {
@@ -1581,6 +1601,39 @@ function attachLocAutocomplete(inputId, boxId) {
 attachLocAutocomplete('fLocation', 'locSuggestions');
 attachLocAutocomplete('fFrom', 'locSuggestionsFrom');
 attachLocAutocomplete('fTo', 'locSuggestionsTo');
+
+function addPoi(value = '') {
+  const row = document.createElement('div');
+  row.className = 'poi-row';
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:relative;flex:1';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = 'e.g. Freedom Square, Tbilisi';
+  input.autocomplete = 'off';
+  input.value = value;
+
+  const box = document.createElement('div');
+  box.className = 'loc-suggestions';
+  box.style.display = 'none';
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.innerHTML = '<i data-lucide="x"></i>';
+  removeBtn.className = 'icon-btn poi-remove';
+  removeBtn.onclick = () => row.remove();
+
+  wrap.appendChild(input);
+  wrap.appendChild(box);
+  row.appendChild(wrap);
+  row.appendChild(removeBtn);
+
+  document.getElementById('poiList').appendChild(row);
+  attachLocAutocompleteEl(input, box);
+  lucide.createIcons({ nodes: [removeBtn] });
+}
 
 document.getElementById('fAllDay').addEventListener('change', function() {
   const allDay = this.checked;
@@ -1751,6 +1804,8 @@ function populateForm(ev) {
   }
   document.getElementById('fNotes').value    = ev.notes    || '';
   document.getElementById('fLocation').value = ev.location || '';
+  document.getElementById('poiList').innerHTML = '';
+  (ev.locations || []).forEach(loc => addPoi(loc));
 }
 
 function resetForm() {
@@ -1774,6 +1829,7 @@ function resetForm() {
   document.getElementById('fEnd').value      = '';
   document.getElementById('fNotes').value    = '';
   document.getElementById('fLocation').value = '';
+  document.getElementById('poiList').innerHTML = '';
 }
 
 document.getElementById('saveBtn').addEventListener('click', async () => {
@@ -1806,6 +1862,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     end_at:   allDay ? null : (fromLocalInput(document.getElementById('fEnd').value) || null),
     notes:    document.getElementById('fNotes').value.trim() || null,
     location: document.getElementById('fLocation').value.trim() || null,
+    locations: [...document.querySelectorAll('#poiList input')].map(i => i.value.trim()).filter(Boolean),
     status:   editingId ? (events.find(e => e.id === editingId)?.status || 'upcoming') : 'upcoming',
   };
 
