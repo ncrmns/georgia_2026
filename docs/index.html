@@ -149,6 +149,7 @@
       margin-top: 4px;
     }
     .progress-labels span { font-size: 11px; color: var(--muted); }
+    .progress-labels .loc-toggle { font-size: 11px; padding: 1px 6px; }
 
     /* ── Notes ── */
     .card-notes {
@@ -1172,18 +1173,20 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
   let progressHtml = '';
   if (useDistProgress) {
     if (!travelDistCache[ev.id]) initTravelDist(ev);
-    if (navigator.geolocation) startGeoWatch();
     const cache = travelDistCache[ev.id];
     const dist = (cache && cache !== 'loading' && cache !== 'error') ? cache : null;
-    let barPct = 0, centerLabel = '…';
+    const gpsActive = geoWatchId !== null;
+    let barPct = 0, centerLabel;
     if (dist) {
       if (currentPosition) {
         const remKm = haversineKm(currentPosition.lat, currentPosition.lng, dist.toCoords.lat, dist.toCoords.lng);
         barPct = Math.round(Math.max(0, Math.min(1, (dist.totalKm - remKm) / dist.totalKm)) * 100);
         centerLabel = formatKm(remKm) + ' left';
       } else {
-        centerLabel = formatKm(dist.totalKm) + ' total';
+        centerLabel = `<button class="loc-toggle" onclick="enableTravelGps('${ev.id}')"><i data-lucide="navigation"></i>${formatKm(dist.totalKm)} total — tap for live km</button>`;
       }
+    } else {
+      centerLabel = '…';
     }
     progressHtml = `
       <div class="progress-wrap">
@@ -1623,6 +1626,12 @@ function startGeoWatch() {
     { enableHighAccuracy: false, maximumAge: 30000 }
   );
 }
+
+window.enableTravelGps = (id) => {
+  if (!navigator.geolocation) { alert('Geolocation not supported by your browser.'); return; }
+  startGeoWatch();
+  render();
+};
 
 async function initTravelDist(ev) {
   if (travelDistCache[ev.id]) return;
