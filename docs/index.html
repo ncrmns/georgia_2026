@@ -500,6 +500,8 @@
     /* ── Countdown ── */
     .countdown { font-size: 13px; color: var(--muted); margin-top: 2px; }
     .countdown strong { color: var(--accent); }
+    .geo-status { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .geo-status.error { color: var(--red); }
 
     /* ── Card entrance ── */
     @keyframes card-in {
@@ -546,6 +548,7 @@
         <div class="trip-title" id="tripTitle">Loading…</div>
         <div class="trip-date" id="tripDate"></div>
         <div class="countdown" id="countdown"></div>
+        <div class="geo-status" id="geoStatus"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="lock-btn" id="copyBtn" title="Copy page URL"><i data-lucide="link"></i></button>
@@ -1117,6 +1120,18 @@ function renderHeader() {
       document.getElementById('countdown').innerHTML = '';
     } else {
       document.getElementById('countdown').textContent = 'Trip completed';
+    }
+  }
+  const geoEl = document.getElementById('geoStatus');
+  if (geoEl) {
+    if (!locationEnabled) { geoEl.textContent = ''; geoEl.className = 'geo-status'; }
+    else if (geoError) { geoEl.textContent = `📍 ${geoError}`; geoEl.className = 'geo-status error'; }
+    else if (!currentPosition) { geoEl.textContent = '📍 Getting location…'; geoEl.className = 'geo-status'; }
+    else {
+      const cached = Object.values(locationLookup).filter(l => geocodeCache[l]).length;
+      const total  = Object.values(locationLookup).length;
+      geoEl.textContent = cached < total ? `📍 Geocoding ${cached}/${total}…` : `📍 ${currentPosition.lat.toFixed(4)}, ${currentPosition.lng.toFixed(4)}`;
+      geoEl.className = 'geo-status';
     }
   }
 }
