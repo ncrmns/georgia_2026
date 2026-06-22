@@ -195,6 +195,13 @@
     }
     .pinned-note:last-child { border-bottom: none; }
     .pinned-note-text { flex: 1; }
+    .drag-handle {
+      display: none; cursor: grab; color: var(--muted); opacity: .4; padding: 0 2px;
+    }
+    .drag-handle:active { cursor: grabbing; }
+    .drag-handle svg { width: 14px; height: 14px; stroke: currentColor; }
+    .is-admin .drag-handle { display: flex; align-items: center; }
+    .pinned-note.drag-over { border-top: 2px solid var(--accent); }
     .pinned-note-address {
       display: flex; align-items: center; gap: 6px; flex: 1;
       color: var(--text); text-decoration: none; font-size: 14px;
@@ -962,16 +969,19 @@ function renderPinned() {
 
   let html = '<div class="pinned-notes">';
   for (const n of notes) {
+    const drag = `<span class="drag-handle" draggable="true" data-note-id="${n.id}"><i data-lucide="grip-vertical"></i></span>`;
     if (n.icon === 'map-pin') {
       const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(n.title)}`;
-      html += `<div class="pinned-note">
+      html += `<div class="pinned-note" data-note-id="${n.id}">
+        ${drag}
         <a class="pinned-note-address" href="${mapsUrl}" target="_blank" rel="noopener">
           <i data-lucide="map-pin"></i>${escHtml(n.title)}
         </a>
         <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
       </div>`;
     } else {
-      html += `<div class="pinned-note">
+      html += `<div class="pinned-note" data-note-id="${n.id}">
+        ${drag}
         <span class="pinned-note-text">${escHtml(n.title)}</span>
         <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
       </div>`;
@@ -981,7 +991,8 @@ function renderPinned() {
     const inputStyle = 'flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit;';
     const btnStyle   = 'background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap';
     html += `<div class="pinned-note" id="addNoteRow" style="gap:6px">
-      <input id="noteInput" type="text" placeholder="Add a note…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveNote()" />
+      <i data-lucide="pin" style="width:13px;height:13px;stroke:var(--muted);flex-shrink:0"></i>
+      <input id="noteInput" type="text" placeholder="Pin a note…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveNote()" />
       <button onclick="saveNote()" style="${btnStyle}">Add</button>
     </div>`;
     html += `<div class="pinned-note" style="gap:6px">
@@ -992,6 +1003,46 @@ function renderPinned() {
   }
   html += '</div>';
   el.innerHTML = html;
+  bindNoteDrag(el);
+}
+
+let dragSrcId = null;
+
+function bindNoteDrag(el) {
+  const handles = el.querySelectorAll('.drag-handle');
+  handles.forEach(handle => {
+    handle.addEventListener('dragstart', e => {
+      dragSrcId = handle.dataset.noteId;
+      e.dataTransfer.effectAllowed = 'move';
+    });
+  });
+
+  const rows = el.querySelectorAll('.pinned-note[data-note-id]');
+  rows.forEach(row => {
+    row.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('drag-over'); });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', async e => {
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      const targetId = row.dataset.noteId;
+      if (!targetId || targetId === dragSrcId) return;
+
+      // Reorder notes array
+      const srcIdx = notes.findIndex(n => n.id == dragSrcId);
+      const tgtIdx = notes.findIndex(n => n.id == targetId);
+      if (srcIdx === -1 || tgtIdx === -1) return;
+      const [moved] = notes.splice(srcIdx, 1);
+      notes.splice(tgtIdx, 0, moved);
+
+      // Persist new order via start_at (base + index ms)
+      const base = new Date('2000-01-01').getTime();
+      await Promise.all(notes.map((n, i) =>
+        sb.from('events').update({ start_at: new Date(base + i * 1000).toISOString() }).eq('id', n.id)
+      ));
+      renderPinned();
+      lucide.createIcons();
+    });
+  });
 }
 
 function renderHeader() {
