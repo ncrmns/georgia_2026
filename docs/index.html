@@ -720,7 +720,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 13;
+const BUILD = 14;
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
 // Demo events — used when Supabase isn't configured yet
@@ -1383,7 +1383,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
           <span>${ev.end_at ? formatTime(ev.end_at) : ''}</span>
         </div>
       </div>`;
-  } else if (p !== null && !allDay && extraClass !== 'done') {
+  } else if (p !== null && !allDay && extraClass !== 'done' && new Date() >= new Date(ev.start_at)) {
     const timeLeftLabel = isLate ? 'overtime' : formatTimeLeft(new Date(ev.end_at) - new Date());
     progressHtml = `
       <div class="progress-wrap">
@@ -1446,7 +1446,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
     return `
     <div class="card ${extraClass}${colorClass}${typeClass2}"${colorStyle} data-id="${ev.id}">
       ${routeHtml}
-      ${p !== null && !allDay && extraClass !== 'done' ? '' : `<div class="card-meta" style="margin-top:6px">
+      ${p !== null && !allDay && extraClass !== 'done' && new Date() >= new Date(ev.start_at) ? '' : `<div class="card-meta" style="margin-top:6px">
         ${timeDisplay}
         ${badgeHtml(ev)}${startsInLabel}
       </div>`}
@@ -1463,7 +1463,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
         <div class="card-icon ${typeClass(ev.type)}">${iconHtml(eventIcon(ev))}</div>
         <div class="card-body">
           <div class="card-title">${escHtml(ev.title)}</div>
-          ${p !== null && !allDay && extraClass !== 'done' ? '' : `<div class="card-meta">
+          ${p !== null && !allDay && extraClass !== 'done' && new Date() >= new Date(ev.start_at) ? '' : `<div class="card-meta">
             ${timeDisplay}
             ${badgeHtml(ev)}${startsInLabel}
           </div>`}
