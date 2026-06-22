@@ -649,11 +649,17 @@
     <div class="field-row" id="routeField" style="display:none">
       <div class="field">
         <label>From</label>
-        <input type="text" id="fFrom" placeholder="e.g. Budapest, Hungary" />
+        <div style="position:relative">
+          <input type="text" id="fFrom" placeholder="e.g. Budapest, Hungary" autocomplete="off" />
+          <div class="loc-suggestions" id="locSuggestionsFrom" style="display:none"></div>
+        </div>
       </div>
       <div class="field">
         <label>To</label>
-        <input type="text" id="fTo" placeholder="e.g. Kutaisi, Georgia" />
+        <div style="position:relative">
+          <input type="text" id="fTo" placeholder="e.g. Kutaisi, Georgia" autocomplete="off" />
+          <div class="loc-suggestions" id="locSuggestionsTo" style="display:none"></div>
+        </div>
       </div>
     </div>
 
@@ -1486,19 +1492,19 @@ window.openEdit = (id) => {
 };
 
 // ── Location autocomplete ──
-(function () {
-  const input = document.getElementById('fLocation');
-  const box   = document.getElementById('locSuggestions');
+function attachLocAutocomplete(inputId, boxId) {
+  const input = document.getElementById(inputId);
+  const box   = document.getElementById(boxId);
   let timer, activeIdx = -1, results = [];
 
   async function search(q) {
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=1`;
     try {
-      const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+      const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
       results = await res.json();
     } catch { results = []; }
     activeIdx = -1;
-    render();
+    renderList();
   }
 
   function displayName(r) {
@@ -1508,7 +1514,7 @@ window.openEdit = (id) => {
     return { primary, secondary };
   }
 
-  function render() {
+  function renderList() {
     if (!results.length) { box.style.display = 'none'; return; }
     box.innerHTML = results.map((r, i) => {
       const { primary, secondary } = displayName(r);
@@ -1523,7 +1529,6 @@ window.openEdit = (id) => {
     const { primary, secondary } = displayName(r);
     input.value = [primary, secondary].filter(Boolean).join(', ');
     results = []; box.style.display = 'none';
-    // Pre-cache the geocode result
     geocodeCache[input.value] = { lat: parseFloat(r.lat), lng: parseFloat(r.lon) };
     try { localStorage.setItem('geocodeCache', JSON.stringify(geocodeCache)); } catch {}
   }
@@ -1537,8 +1542,8 @@ window.openEdit = (id) => {
 
   input.addEventListener('keydown', e => {
     if (!results.length) return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, results.length - 1); render(); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); render(); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, results.length - 1); renderList(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); renderList(); }
     else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); select(results[activeIdx]); }
     else if (e.key === 'Escape') { results = []; box.style.display = 'none'; }
   });
@@ -1551,7 +1556,11 @@ window.openEdit = (id) => {
   document.addEventListener('click', e => {
     if (!input.contains(e.target) && !box.contains(e.target)) { results = []; box.style.display = 'none'; }
   });
-})();
+}
+
+attachLocAutocomplete('fLocation', 'locSuggestions');
+attachLocAutocomplete('fFrom', 'locSuggestionsFrom');
+attachLocAutocomplete('fTo', 'locSuggestionsTo');
 
 document.getElementById('addEventBtn').addEventListener('click', () => {
   editingId = null;
