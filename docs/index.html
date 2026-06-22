@@ -920,8 +920,6 @@ function badgeHtml(ev, now = new Date()) {
   const end   = ev.end_at ? new Date(ev.end_at) : null;
   if (ev.status === 'done')    return '<span class="status-badge badge-done">Done</span>';
   if (ev.status === 'skipped') return '<span class="status-badge badge-upcoming">Skipped</span>';
-  if (now > (end || start) && ev.status !== 'active')
-                               return '<span class="status-badge badge-late">Late</span>';
   if (now >= start)            return '';
   return '';
 }
