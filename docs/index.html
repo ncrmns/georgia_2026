@@ -1641,7 +1641,7 @@ function fetchPosition() {
 function startGeoWatch() {
   if (geoWatchId !== null) return;
   fetchPosition();
-  geoWatchId = setInterval(fetchPosition, 120000);
+  geoWatchId = setInterval(fetchPosition, 300000);
 }
 
 window.enableTravelGps = (id) => {
