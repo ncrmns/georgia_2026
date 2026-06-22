@@ -201,6 +201,8 @@
     .drag-handle:active { cursor: grabbing; }
     .drag-handle svg { width: 14px; height: 14px; stroke: currentColor; }
     .is-admin .drag-handle { display: flex; align-items: center; }
+    .is-admin .pinned-note[data-note-id] { cursor: grab; }
+    .is-admin .pinned-note[data-note-id]:active { cursor: grabbing; }
     .pinned-note.drag-over { border-top: 2px solid var(--accent); }
     .pinned-note-address {
       display: flex; align-items: center; gap: 6px; flex: 1;
@@ -969,18 +971,18 @@ function renderPinned() {
 
   let html = '<div class="pinned-notes">';
   for (const n of notes) {
-    const drag = `<span class="drag-handle" draggable="true" data-note-id="${n.id}"><i data-lucide="grip-vertical"></i></span>`;
+    const drag = `<span class="drag-handle"><i data-lucide="grip-vertical"></i></span>`;
     if (n.icon === 'map-pin') {
       const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(n.title)}`;
-      html += `<div class="pinned-note" data-note-id="${n.id}">
+      html += `<div class="pinned-note" data-note-id="${n.id}"${isAdmin ? ' draggable="true"' : ''}>
         ${drag}
-        <a class="pinned-note-address" href="${mapsUrl}" target="_blank" rel="noopener">
+        <a class="pinned-note-address" href="${mapsUrl}" target="_blank" rel="noopener" onclick="if(isAdmin){return false;}">
           <i data-lucide="map-pin"></i>${escHtml(n.title)}
         </a>
         <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
       </div>`;
     } else {
-      html += `<div class="pinned-note" data-note-id="${n.id}">
+      html += `<div class="pinned-note" data-note-id="${n.id}"${isAdmin ? ' draggable="true"' : ''}>
         ${drag}
         <span class="pinned-note-text">${escHtml(n.title)}</span>
         <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
@@ -1009,15 +1011,13 @@ function renderPinned() {
 let dragSrcId = null;
 
 function bindNoteDrag(el) {
-  const handles = el.querySelectorAll('.drag-handle');
-  handles.forEach(handle => {
-    handle.addEventListener('dragstart', e => {
-      dragSrcId = handle.dataset.noteId;
+  const rows = el.querySelectorAll('.pinned-note[data-note-id]');
+  rows.forEach(row => {
+    row.addEventListener('dragstart', e => {
+      dragSrcId = row.dataset.noteId;
       e.dataTransfer.effectAllowed = 'move';
     });
   });
-
-  const rows = el.querySelectorAll('.pinned-note[data-note-id]');
   rows.forEach(row => {
     row.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('drag-over'); });
     row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
