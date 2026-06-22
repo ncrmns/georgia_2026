@@ -195,7 +195,9 @@
     }
     .pinned-note:last-child { border-bottom: none; }
     .pinned-note-text { flex: 1; color: var(--text); }
-    .pinned-note-icon { width: 13px; height: 13px; stroke: var(--accent); flex-shrink: 0; }
+    .pinned-note-icon { width: 13px; height: 13px; stroke: var(--accent); flex-shrink: 0; pointer-events: none; }
+    .pinned-note[draggable] * { pointer-events: none; }
+    .pinned-note[draggable] button, .pinned-note[draggable] a { pointer-events: auto; }
     .drag-handle {
       display: none; cursor: grab; color: var(--muted); opacity: .4; padding: 0 2px;
     }
