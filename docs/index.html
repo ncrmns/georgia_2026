@@ -1013,9 +1013,11 @@ function renderPinned() {
 let dragSrcId = null;
 
 function bindNoteDrag(el) {
+  if (!isAdmin) return;
   const rows = el.querySelectorAll('.pinned-note[data-note-id]');
 
   rows.forEach(row => {
+    row.draggable = true;
     row.addEventListener('dragstart', e => {
       dragSrcId = row.dataset.noteId;
       e.dataTransfer.effectAllowed = 'move';
