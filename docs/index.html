@@ -1049,7 +1049,7 @@ function bindNoteDrag(el) {
   rows.forEach(row => {
     // ── Mouse drag ──
     row.addEventListener('mousedown', e => {
-      if (e.target.closest('button, a')) return;
+      if (e.target.closest('button')) return;
       dragSrcId = row.dataset.noteId;
       row.style.opacity = '.4';
 
@@ -1072,7 +1072,7 @@ function bindNoteDrag(el) {
 
     // ── Touch drag ──
     row.addEventListener('touchstart', e => {
-      if (e.target.closest('button, a')) return;
+      if (e.target.closest('button')) return;
       dragSrcId = row.dataset.noteId;
       row.style.opacity = '.4';
     }, { passive: true });
