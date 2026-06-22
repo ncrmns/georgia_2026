@@ -1012,35 +1012,43 @@ let dragSrcId = null;
 
 function bindNoteDrag(el) {
   const rows = el.querySelectorAll('.pinned-note[data-note-id]');
+
   rows.forEach(row => {
     row.addEventListener('dragstart', e => {
       dragSrcId = row.dataset.noteId;
       e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => row.style.opacity = '.4', 0);
     });
-  });
-  rows.forEach(row => {
-    row.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('drag-over'); });
-    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('dragend', () => { row.style.opacity = ''; });
+
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      el.querySelectorAll('.pinned-note').forEach(r => r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+    });
+
     row.addEventListener('drop', async e => {
       e.preventDefault();
-      row.classList.remove('drag-over');
+      el.querySelectorAll('.pinned-note').forEach(r => r.classList.remove('drag-over'));
       const targetId = row.dataset.noteId;
       if (!targetId || targetId === dragSrcId) return;
 
-      // Reorder notes array
       const srcIdx = notes.findIndex(n => n.id == dragSrcId);
       const tgtIdx = notes.findIndex(n => n.id == targetId);
       if (srcIdx === -1 || tgtIdx === -1) return;
       const [moved] = notes.splice(srcIdx, 1);
       notes.splice(tgtIdx, 0, moved);
 
-      // Persist new order via start_at (base + index ms)
-      const base = new Date('2000-01-01').getTime();
-      await Promise.all(notes.map((n, i) =>
-        sb.from('events').update({ start_at: new Date(base + i * 1000).toISOString() }).eq('id', n.id)
-      ));
       renderPinned();
       lucide.createIcons();
+
+      if (!DEMO_MODE) {
+        const base = new Date('2000-01-01').getTime();
+        await Promise.all(notes.map((n, i) =>
+          sb.from('events').update({ start_at: new Date(base + i * 1000).toISOString() }).eq('id', n.id)
+        ));
+      }
     });
   });
 }
