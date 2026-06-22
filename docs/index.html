@@ -95,10 +95,10 @@
       font-size: 16px; flex-shrink: 0; margin-top: 1px;
     }
     .card-icon svg { width: 16px; height: 16px; stroke-width: 2; }
-    .icon-deadline svg { stroke: var(--accent); }
+    .icon-deadline svg { stroke: var(--red); }
     .icon-travel   svg { stroke: var(--accent); }
     .icon-activity svg { stroke: var(--accent); }
-    .icon-deadline { background: var(--accent-dim); }
+    .icon-deadline { background: rgba(255,69,58,.12); }
     .icon-travel   { background: var(--accent-dim); }
     .icon-activity { background: var(--accent-dim); }
 
@@ -453,7 +453,7 @@
     .day-band-3 .card:not(.has-color) { border-left: 2px solid color-mix(in srgb, var(--day3) 35%, transparent); }
 
     /* ── Type-specific card borders ── */
-    .card.type-deadline { border-left-width: 3px; border-left-color: var(--orange); }
+    .card.type-deadline { border-left-width: 3px; border-left-color: var(--red); }
 
     /* ── Status visual: NOW glow, past fade ── */
     .card.current {
@@ -728,7 +728,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 17;
+const BUILD = 18;
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
 // Demo events — used when Supabase isn't configured yet
