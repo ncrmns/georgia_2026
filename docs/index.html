@@ -161,6 +161,13 @@
       font-size: 10px; font-weight: 700; letter-spacing: .5px;
       color: var(--muted); text-transform: uppercase; margin-bottom: 4px;
     }
+    .card-location {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-top: 8px; font-size: 12px; color: var(--muted);
+      text-decoration: none;
+    }
+    .card-location:hover { color: var(--text); }
+    .card-location svg { width: 12px; height: 12px; flex-shrink: 0; }
 
     /* ── Pinned notes ── */
     .pinned-notes { margin-bottom: 4px; }
@@ -621,6 +628,11 @@
         <label>End (optional)</label>
         <input type="datetime-local" id="fEnd" />
       </div>
+    </div>
+
+    <div class="field">
+      <label>Location <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <input id="fLocation" type="text" placeholder="e.g. Batumi Old Town, Georgia">
     </div>
 
     <div class="field">
@@ -1154,6 +1166,13 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
       <div class="card-notes">${escHtml(ev.notes)}</div>`;
   }
 
+  let locationHtml = '';
+  if (ev.location) {
+    const short = ev.location.split(',')[0].trim();
+    const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(ev.location)}`;
+    locationHtml = `<a class="card-location" href="${mapsUrl}" target="_blank" rel="noopener"><i data-lucide="map-pin"></i>${escHtml(short)}</a>`;
+  }
+
   const adminHtml = `
     <div class="card-actions">
       <button class="action-btn edit" onclick="openEdit('${ev.id}')"><i data-lucide="pencil"></i>Edit</button>
@@ -1176,6 +1195,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
         ${badgeHtml(ev)}${startsInLabel}
       </div>`}
       ${progressHtml}
+      ${locationHtml}
       ${notesHtml}
       ${adminHtml}
     </div>`;
@@ -1194,6 +1214,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
         </div>
       </div>
       ${progressHtml}
+      ${locationHtml}
       ${notesHtml}
       ${adminHtml}
     </div>`;
@@ -1392,7 +1413,8 @@ function populateForm(ev) {
   }
   document.getElementById('fStart').value = toLocalInput(ev.start_at);
   document.getElementById('fEnd').value   = toLocalInput(ev.end_at);
-  document.getElementById('fNotes').value = ev.notes || '';
+  document.getElementById('fNotes').value    = ev.notes    || '';
+  document.getElementById('fLocation').value = ev.location || '';
 }
 
 function resetForm() {
@@ -1407,9 +1429,10 @@ function resetForm() {
   document.getElementById('fTitle').value = '';
   document.getElementById('fFrom').value  = '';
   document.getElementById('fTo').value    = '';
-  document.getElementById('fStart').value = '';
-  document.getElementById('fEnd').value   = '';
-  document.getElementById('fNotes').value = '';
+  document.getElementById('fStart').value    = '';
+  document.getElementById('fEnd').value      = '';
+  document.getElementById('fNotes').value    = '';
+  document.getElementById('fLocation').value = '';
 }
 
 document.getElementById('saveBtn').addEventListener('click', async () => {
@@ -1433,6 +1456,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     start_at: fromLocalInput(start),
     end_at:   fromLocalInput(document.getElementById('fEnd').value) || null,
     notes:    document.getElementById('fNotes').value.trim() || null,
+    location: document.getElementById('fLocation').value.trim() || null,
     status:   editingId ? (events.find(e => e.id === editingId)?.status || 'upcoming') : 'upcoming',
   };
 
