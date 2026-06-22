@@ -607,8 +607,6 @@
       <div class="vehicle-picker">
         <div class="vehicle-opt selected" data-vehicle="car"><i data-lucide="car"></i>Drive</div>
         <div class="vehicle-opt" data-vehicle="plane"><i data-lucide="plane"></i>Plane</div>
-        <div class="vehicle-opt" data-vehicle="sailboat"><i data-lucide="sailboat"></i>Raft</div>
-        <div class="vehicle-opt" data-vehicle="bike"><i data-lucide="bike"></i>ATV</div>
       </div>
     </div>
 
@@ -626,6 +624,8 @@
         <div class="icon-quick" data-icon="bed-double"><i data-lucide="bed-double"></i></div>
         <div class="icon-quick" data-icon="clock"><i data-lucide="clock"></i></div>
         <div class="icon-quick" data-icon="camera"><i data-lucide="camera"></i></div>
+        <div class="icon-quick" data-icon="sailboat"><i data-lucide="sailboat"></i></div>
+        <div class="icon-quick" data-icon="atv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M5 17h4l2-6h6l2 3"/><path d="M9 11l1-4h5l2 4"/></svg></div>
         <input class="icon-custom-input" id="fIcon" maxlength="2" placeholder="😀" title="Or type any emoji" />
       </div>
       <div class="icon-custom-hint">Tap an icon above or type any emoji →</div>
@@ -721,7 +721,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 11;
+const BUILD = 12;
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
 // Demo events — used when Supabase isn't configured yet
@@ -945,8 +945,13 @@ function isLucide(icon) {
   return icon && LUCIDE_NAMES.has(icon);
 }
 
+const CUSTOM_SVGS = {
+  atv: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M5 17h4l2-6h6l2 3"/><path d="M9 11l1-4h5l2 4"/></svg>`,
+};
+
 function iconHtml(icon, cssClass = '') {
   if (!icon) return '';
+  if (CUSTOM_SVGS[icon]) return CUSTOM_SVGS[icon];
   if (isLucide(icon)) return `<i data-lucide="${icon}"${cssClass ? ` class="${cssClass}"` : ''}></i>`;
   return `<span>${icon}</span>`;
 }
@@ -1379,7 +1384,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
           <span>${ev.end_at ? formatTime(ev.end_at) : ''}</span>
         </div>
       </div>`;
-  } else if (showProgress && p !== null) {
+  } else if (p !== null && !allDay && extraClass !== 'done') {
     const timeLeftLabel = isLate ? 'overtime' : formatTimeLeft(new Date(ev.end_at) - new Date());
     progressHtml = `
       <div class="progress-wrap">
@@ -1442,7 +1447,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
     return `
     <div class="card ${extraClass}${colorClass}${typeClass2}"${colorStyle} data-id="${ev.id}">
       ${routeHtml}
-      ${showProgress && p !== null ? '' : `<div class="card-meta" style="margin-top:6px">
+      ${p !== null && !allDay && extraClass !== 'done' ? '' : `<div class="card-meta" style="margin-top:6px">
         ${timeDisplay}
         ${badgeHtml(ev)}${startsInLabel}
       </div>`}
@@ -1459,7 +1464,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
         <div class="card-icon ${typeClass(ev.type)}">${iconHtml(eventIcon(ev))}</div>
         <div class="card-body">
           <div class="card-title">${escHtml(ev.title)}</div>
-          ${showProgress && p !== null ? '' : `<div class="card-meta">
+          ${p !== null && !allDay && extraClass !== 'done' ? '' : `<div class="card-meta">
             ${timeDisplay}
             ${badgeHtml(ev)}${startsInLabel}
           </div>`}
