@@ -1537,6 +1537,8 @@ function startTick() {
     // Update progress bar without full re-render
     const p = progress(ctx.current);
     if (p === null) return;
+    // Non-plane travel cards use distance progress — don't overwrite with time labels
+    if (ctx.current.type === 'travel' && ctx.current.icon !== 'plane') return;
     const fill = document.querySelector('#currentSection .progress-fill');
     const pct  = document.querySelector('#currentSection .progress-labels span:nth-child(2)');
     const isLate = new Date() > new Date(ctx.current.end_at || ctx.current.start_at);
