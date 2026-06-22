@@ -1558,9 +1558,9 @@ function updateDistances() {
   const { lat, lng } = currentPosition;
   let changed = false;
   for (const id of locationTracking) {
-    const ev = events.find(e => e.id == id);
-    if (!ev?.location) continue;
-    const coords = geocodeCache[ev.location];
+    const locStr = locationLookup[id];
+    if (!locStr) continue;
+    const coords = geocodeCache[locStr];
     if (!coords) continue;
     const km = haversineKm(lat, lng, coords.lat, coords.lng);
     const fmt = formatKm(km);
