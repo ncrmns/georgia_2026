@@ -1631,7 +1631,7 @@ function startGeoWatch() {
     (err) => {
       geoWatchId = null; currentPosition = null;
       geoError = err.code === 1
-        ? 'Location denied — enable it in Settings → Privacy & Security → Location Services → Arc'
+        ? 'Location denied — enable it in Settings → Privacy & Security → Location Services'
         : 'Could not get location. Try again.';
       render();
     },
