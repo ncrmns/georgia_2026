@@ -800,7 +800,10 @@ function scheduleContext() {
     if (e.status === 'done' || e.status === 'skipped') return false;
     const start = new Date(e.start_at);
     const end   = e.end_at ? new Date(e.end_at) : null;
-    if (!end) return e.status === 'active' || (now >= start && now < start + 3600000);
+    if (!end) {
+      if (e.type === 'travel' && e.icon !== 'plane') return now >= start;
+      return e.status === 'active' || (now >= start && now < start + 3600000);
+    }
     return now >= start && now <= end;
   });
 
@@ -832,7 +835,11 @@ function progress(ev) {
   const now   = new Date();
   const start = new Date(ev.start_at);
   const end   = ev.end_at ? new Date(ev.end_at) : null;
-  if (!end) return null;
+  if (!end) {
+    // Non-plane travel cards use distance progress — return 0 so the bar renders
+    if (ev.type === 'travel' && ev.icon !== 'plane') return 0;
+    return null;
+  }
   const total   = end - start;
   const elapsed = now - start;
   return Math.max(0, Math.min(1, elapsed / total));
