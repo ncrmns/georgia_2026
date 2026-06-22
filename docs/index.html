@@ -1791,8 +1791,9 @@ window.toggleGlobalLocation = async () => {
   if (!navigator.geolocation) { geoError = 'Geolocation not supported.'; render(); return; }
   geoError = null;
   startGeoWatch();
-  // Geocode all known locations so updateDistances can compute distances
-  for (const locStr of Object.values(locationLookup)) geocode(locStr);
+  // Geocode all known locations, then immediately compute distances with any cached position
+  await Promise.all(Object.values(locationLookup).map(locStr => geocode(locStr)));
+  updateDistances();
 };
 
 async function initTravelDist(ev) {
