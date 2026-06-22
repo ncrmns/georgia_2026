@@ -1182,6 +1182,8 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
         const remKm = haversineKm(currentPosition.lat, currentPosition.lng, dist.toCoords.lat, dist.toCoords.lng);
         barPct = Math.round(Math.max(0, Math.min(1, (dist.totalKm - remKm) / dist.totalKm)) * 100);
         centerLabel = formatKm(remKm) + ' left';
+      } else if (geoError) {
+        centerLabel = `<span style="color:var(--red);font-size:10px;white-space:normal;display:block;text-align:center">${geoError}</span>`;
       } else if (geoWatchId !== null) {
         centerLabel = 'Getting location…';
       } else {
@@ -1572,6 +1574,7 @@ const locationLookup     = {};          // card id -> location string (set durin
 const travelDistCache    = {};          // ev id -> { totalKm, fromCoords, toCoords } | 'loading' | 'error'
 let   geoWatchId         = null;
 let   currentPosition    = null;
+let   geoError           = null;   // error message to show on card
 
 function haversineKm(lat1, lng1, lat2, lng2) {
   const R = 6371;
@@ -1619,6 +1622,7 @@ function startGeoWatch() {
   geoWatchId = navigator.geolocation.watchPosition(
     pos => {
       currentPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      geoError = null;
       updateDistances();
       // Re-render so the travel distance progress bar updates
       const ctx = scheduleContext();
@@ -1626,7 +1630,9 @@ function startGeoWatch() {
     },
     (err) => {
       geoWatchId = null; currentPosition = null;
-      if (err.code === 1) alert('Location access denied. Please enable it in your browser settings and try again.');
+      geoError = err.code === 1
+        ? 'Location denied — enable it in Settings → Privacy & Security → Location Services → Arc'
+        : 'Could not get location. Try again.';
       render();
     },
     { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
@@ -1634,7 +1640,8 @@ function startGeoWatch() {
 }
 
 window.enableTravelGps = (id) => {
-  if (!navigator.geolocation) { alert('Geolocation not supported by your browser.'); return; }
+  if (!navigator.geolocation) { geoError = 'Geolocation not supported by your browser.'; render(); return; }
+  geoError = null;
   startGeoWatch();
   render();
 };
