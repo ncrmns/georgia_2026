@@ -1745,7 +1745,7 @@ function fetchPosition() {
     pos => {
       currentPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       geoError = null;
-      updateDistances();
+      // Auto-complete travel card if within 1km of destination
       const ctx = scheduleContext();
       if (ctx.current?.type === 'travel' && ctx.current?.icon !== 'plane') {
         const cache = travelDistCache[ctx.current.id];
@@ -1753,8 +1753,9 @@ function fetchPosition() {
           const remKm = haversineKm(currentPosition.lat, currentPosition.lng, cache.toCoords.lat, cache.toCoords.lng);
           if (remKm < 1) { setStatus(ctx.current.id, 'done'); return; }
         }
-        render();
       }
+      updateDistances();
+      if (locationEnabled) render();
     },
     (err) => {
       geoWatchId = null; currentPosition = null;
