@@ -19,8 +19,8 @@
       --border:     #2e2e35;
       --text:       #f0f0f5;
       --muted:      #6b6b78;
-      --accent:     #4f8ef7;
-      --accent-dim: #1e3a6e;
+      --accent:     #ff9f0a;
+      --accent-dim: rgba(255,159,10,.12);
       --green:      #34c759;
       --orange:     #ff9f0a;
       --red:        #ff453a;
@@ -83,7 +83,7 @@
       position: relative; transition: border-color .2s;
     }
     .card + .card { margin-top: 8px; }
-    .card.current  { border-color: var(--accent); background: #111827; }
+    .card.current  { border-color: var(--accent); background: #1a1508; }
     .card.late     { border-color: var(--red); }
     .card.done     { opacity: .5; }
     .card.dimmed   { opacity: .6; }
@@ -99,7 +99,7 @@
     .icon-travel   svg { stroke: var(--accent); }
     .icon-activity svg { stroke: var(--purple); }
     .icon-deadline { background: rgba(255,159,10,.15); }
-    .icon-travel   { background: rgba(79,142,247,.15); }
+    .icon-travel   { background: rgba(255,159,10,.15); }
     .icon-activity { background: rgba(191,90,242,.15); }
 
     .card-body { flex: 1; min-width: 0; }
@@ -117,7 +117,7 @@
     }
     .badge-late     { background: rgba(255,69,58,.2);  color: var(--red); }
     .badge-done     { background: rgba(52,199,89,.2);  color: var(--green); }
-    .badge-active   { background: rgba(79,142,247,.2); color: var(--accent); }
+    .badge-active   { background: rgba(255,159,10,.15); color: var(--accent); }
     .badge-upcoming { background: var(--surface2);     color: var(--muted); }
     .starts-in { font-size: 12px; color: var(--accent); font-weight: 600; margin-left: auto; }
 
@@ -368,7 +368,7 @@
       background-color: color-mix(in srgb, var(--card-color, transparent) 7%, var(--surface));
     }
     .card.has-color.current {
-      background-color: color-mix(in srgb, var(--card-color, transparent) 10%, #111827);
+      background-color: color-mix(in srgb, var(--card-color, transparent) 10%, #1a1508);
     }
 
     .save-btn {
