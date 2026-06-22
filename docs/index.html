@@ -1182,8 +1182,10 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
         const remKm = haversineKm(currentPosition.lat, currentPosition.lng, dist.toCoords.lat, dist.toCoords.lng);
         barPct = Math.round(Math.max(0, Math.min(1, (dist.totalKm - remKm) / dist.totalKm)) * 100);
         centerLabel = formatKm(remKm) + ' left';
+      } else if (geoWatchId !== null) {
+        centerLabel = 'Getting location…';
       } else {
-        centerLabel = `<button class="loc-toggle" onclick="enableTravelGps('${ev.id}')"><i data-lucide="navigation"></i>${formatKm(dist.totalKm)} total — tap for live km</button>`;
+        centerLabel = `<button class="loc-toggle" onclick="enableTravelGps('${ev.id}')"><i data-lucide="navigation"></i>${formatKm(dist.totalKm)} — tap for live km</button>`;
       }
     } else {
       centerLabel = '…';
@@ -1622,7 +1624,7 @@ function startGeoWatch() {
       const ctx = scheduleContext();
       if (ctx.current?.type === 'travel' && ctx.current?.icon !== 'plane') render();
     },
-    () => {},
+    (err) => { geoWatchId = null; currentPosition = null; render(); },
     { enableHighAccuracy: false, maximumAge: 30000 }
   );
 }
