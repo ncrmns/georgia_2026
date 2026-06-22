@@ -729,7 +729,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 15;
+const BUILD = 16;
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
 // Demo events — used when Supabase isn't configured yet
@@ -1036,10 +1036,11 @@ function renderPinned() {
     const drag = `<span class="drag-handle"><i data-lucide="grip-vertical"></i></span>`;
     if (n.icon === 'map-pin') {
       const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(n.title)}`;
+      const label = n.notes || n.title.split(',')[0].trim();
       html += `<div class="pinned-note" data-note-id="${n.id}">
         ${drag}
         <a class="pinned-note-address" href="${mapsUrl}" target="_blank" rel="noopener" onclick="if(isAdmin){return false;}">
-          <i data-lucide="map-pin"></i>${escHtml(n.title)}
+          <i data-lucide="map-pin"></i>${escHtml(label)}
         </a>
         <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
       </div>`;
@@ -1060,9 +1061,10 @@ function renderPinned() {
       <input id="noteInput" type="text" placeholder="Pin a note…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveNote()" />
       <button onclick="saveNote()" style="${btnStyle}">Add</button>
     </div>`;
-    html += `<div class="pinned-note" style="gap:6px">
+    html += `<div class="pinned-note" style="gap:6px;flex-wrap:wrap">
       <i data-lucide="map-pin" style="width:13px;height:13px;stroke:var(--accent);flex-shrink:0"></i>
       <input id="addressInput" type="text" placeholder="Pin an address…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveAddress()" />
+      <input id="addressNameInput" type="text" placeholder="Display name (opt.)" style="width:120px;background:none;border:none;border-left:1px solid var(--border);outline:none;font-size:12px;color:var(--muted);font-family:inherit;padding-left:8px;" onkeydown="if(event.key==='Enter')saveAddress()" />
       <button onclick="saveAddress()" style="${btnStyle}">Add</button>
     </div>`;
   }
@@ -1526,16 +1528,19 @@ window.saveNote = async () => {
 
 window.saveAddress = async () => {
   const input = document.getElementById('addressInput');
+  const nameInput = document.getElementById('addressNameInput');
   const text = input?.value.trim();
   if (!text) return;
   input.disabled = true;
+  const displayName = nameInput?.value.trim() || null;
   const { error } = await sb.from('events').insert({
     trip_id: TRIP_ID, type: 'note', icon: 'map-pin',
-    title: text, start_at: new Date().toISOString(), status: 'upcoming'
+    title: text, notes: displayName, start_at: new Date().toISOString(), status: 'upcoming'
   });
   input.disabled = false;
   if (error) { alert('Failed to save address: ' + error.message); return; }
   input.value = '';
+  if (nameInput) nameInput.value = '';
   await loadEvents();
 };
 
