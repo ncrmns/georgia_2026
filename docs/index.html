@@ -424,20 +424,8 @@
     }
 
     /* ── Day color bands ── */
-    :root {
-      --day0: #4f8ef7; /* blue  – day 1 */
-      --day1: #ff9f0a; /* amber – day 2 */
-      --day2: #34c759; /* green – day 3 */
-      --day3: #bf5af2; /* purple – day 4+ */
-    }
-    .day-band-0 .day-header { color: var(--day0); }
-    .day-band-0 .day-header::after { background: color-mix(in srgb, var(--day0) 30%, transparent); }
-    .day-band-1 .day-header { color: var(--day1); }
-    .day-band-1 .day-header::after { background: color-mix(in srgb, var(--day1) 30%, transparent); }
-    .day-band-2 .day-header { color: var(--day2); }
-    .day-band-2 .day-header::after { background: color-mix(in srgb, var(--day2) 30%, transparent); }
-    .day-band-3 .day-header { color: var(--day3); }
-    .day-band-3 .day-header::after { background: color-mix(in srgb, var(--day3) 30%, transparent); }
+    .day-header { color: var(--accent); }
+    .day-header::after { background: color-mix(in srgb, var(--accent) 30%, transparent); }
     .day-band-0 .card:not(.has-color) { border-left: 2px solid color-mix(in srgb, var(--day0) 35%, transparent); }
     .day-band-1 .card:not(.has-color) { border-left: 2px solid color-mix(in srgb, var(--day1) 35%, transparent); }
     .day-band-2 .card:not(.has-color) { border-left: 2px solid color-mix(in srgb, var(--day2) 35%, transparent); }
