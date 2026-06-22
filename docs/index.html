@@ -46,7 +46,8 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 16px; cursor: pointer; transition: all .15s; flex-shrink: 0;
     }
-    .lock-btn:hover, .lock-btn.active { color: var(--accent); border-color: var(--accent); }
+    @media (hover: hover) { .lock-btn:hover { color: var(--accent); border-color: var(--accent); } }
+    .lock-btn.active { color: var(--accent); border-color: var(--accent); }
     .lock-btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; }
 
     /* ── Admin bar ── */
@@ -149,7 +150,6 @@
       margin-top: 4px;
     }
     .progress-labels span { font-size: 11px; color: var(--muted); }
-    .progress-labels .loc-toggle { font-size: 11px; padding: 1px 6px; }
 
     /* ── Notes ── */
     .card-notes {
@@ -172,15 +172,6 @@
     }
     .card-location:hover { color: var(--text); }
     .card-location svg { width: 12px; height: 12px; flex-shrink: 0; }
-    .loc-toggle {
-      background: none; border: 1px solid var(--border); border-radius: 20px;
-      color: var(--muted); font-size: 11px; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 2px 8px; transition: all .15s; white-space: nowrap; flex-shrink: 0;
-    }
-    .loc-toggle svg { width: 11px; height: 11px; }
-    @media (hover: hover) { .loc-toggle:hover { border-color: var(--accent); color: var(--accent); } }
-    .loc-toggle.active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
     .loc-distance {
       font-size: 12px; color: var(--accent); font-weight: 600;
     }
@@ -552,6 +543,7 @@
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="lock-btn" id="copyBtn" title="Copy page URL"><i data-lucide="link"></i></button>
+        <button class="lock-btn" id="navBtn" title="Toggle location" onclick="toggleGlobalLocation()"><i data-lucide="navigation"></i></button>
         <button class="lock-btn" id="lockBtn" title="Admin login"><i data-lucide="lock"></i></button>
       </div>
     </div>
@@ -1295,19 +1287,18 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
     if (!travelDistCache[ev.id]) initTravelDist(ev);
     const cache = travelDistCache[ev.id];
     const dist = (cache && cache !== 'loading' && cache !== 'error') ? cache : null;
-    const gpsActive = geoWatchId !== null;
     let barPct = 0, centerLabel;
     if (dist) {
-      if (currentPosition) {
+      if (locationEnabled && currentPosition) {
         const remKm = haversineKm(currentPosition.lat, currentPosition.lng, dist.toCoords.lat, dist.toCoords.lng);
         barPct = Math.round(Math.max(0, Math.min(1, (dist.totalKm - remKm) / dist.totalKm)) * 100);
         centerLabel = formatKm(remKm) + ' left';
-      } else if (geoError) {
+      } else if (locationEnabled && geoError) {
         centerLabel = `<span style="color:var(--red);font-size:10px;white-space:normal;display:block;text-align:center">${geoError}</span>`;
-      } else if (geoWatchId !== null) {
+      } else if (locationEnabled) {
         centerLabel = 'Getting location…';
       } else {
-        centerLabel = `<button class="loc-toggle" onclick="enableTravelGps('${ev.id}')"><i data-lucide="navigation"></i>${formatKm(dist.totalKm)} — tap for live km</button>`;
+        centerLabel = formatKm(dist.totalKm);
       }
     } else {
       centerLabel = '…';
@@ -1348,14 +1339,12 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
   if (ev.location) {
     const short = ev.location.split(',')[0].trim();
     const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(ev.location)}`;
-    const isTracking = locationTracking.has(ev.id);
     const dist = locationDistances[ev.id];
     const distHtml = dist != null ? `<span class="loc-distance">${dist}</span>` : '';
     locationLookup[ev.id] = ev.location;
     locationHtml = `<div class="card-location-row">
       <a class="card-location" href="${mapsUrl}" target="_blank" rel="noopener"><i data-lucide="map-pin"></i>${escHtml(short)}</a>
       ${distHtml}
-      <button class="loc-toggle${isTracking ? ' active' : ''}" onclick="toggleLocationTracking('${ev.id}')"><i data-lucide="navigation"></i>${isTracking ? 'On' : 'km'}</button>
     </div>`;
   }
 
@@ -1702,7 +1691,7 @@ function startRefresh() {
 // Location tracking
 // ─────────────────────────────────────────────
 
-const locationTracking   = new Set();   // card ids with tracking on
+let   locationEnabled    = false;        // global location tracking toggle
 const locationDistances  = {};          // card id -> formatted distance string
 const geocodeCache       = {};          // location string -> {lat, lng}
 const locationLookup     = {};          // card id -> location string (set during render)
@@ -1733,16 +1722,15 @@ async function geocode(locationStr) {
   if (!data.length) return null;
   const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
   geocodeCache[locationStr] = coords;
+  updateDistances();
   return coords;
 }
 
 function updateDistances() {
-  if (!currentPosition || !locationTracking.size) return;
+  if (!currentPosition || !locationEnabled) return;
   const { lat, lng } = currentPosition;
   let changed = false;
-  for (const id of locationTracking) {
-    const locStr = locationLookup[id];
-    if (!locStr) continue;
+  for (const [id, locStr] of Object.entries(locationLookup)) {
     const coords = geocodeCache[locStr];
     if (!coords) continue;
     const km = haversineKm(lat, lng, coords.lat, coords.lng);
@@ -1786,11 +1774,25 @@ function startGeoWatch() {
   geoWatchId = setInterval(fetchPosition, 300000);
 }
 
-window.enableTravelGps = (id) => {
-  if (!navigator.geolocation) { geoError = 'Geolocation not supported by your browser.'; render(); return; }
+window.toggleGlobalLocation = async () => {
+  if (locationEnabled) {
+    locationEnabled = false;
+    currentPosition = null;
+    geoError = null;
+    if (geoWatchId !== null) { clearInterval(geoWatchId); geoWatchId = null; }
+    for (const id of Object.keys(locationDistances)) delete locationDistances[id];
+    document.getElementById('navBtn')?.classList.remove('active');
+    render();
+    return;
+  }
+  locationEnabled = true;
+  document.getElementById('navBtn')?.classList.add('active');
+  render(); // populates locationLookup
+  if (!navigator.geolocation) { geoError = 'Geolocation not supported.'; render(); return; }
   geoError = null;
   startGeoWatch();
-  render();
+  // Geocode all known locations so updateDistances can compute distances
+  for (const locStr of Object.values(locationLookup)) geocode(locStr);
 };
 
 async function initTravelDist(ev) {
@@ -1805,42 +1807,6 @@ async function initTravelDist(ev) {
   render();
 }
 
-window.toggleLocationTracking = async (id) => {
-  const locationStr = locationLookup[id];
-  if (!locationStr) return;
-  if (locationTracking.has(id)) {
-    locationTracking.delete(id);
-    delete locationDistances[id];
-    if (!locationTracking.size && geoWatchId !== null) {
-      clearInterval(geoWatchId);
-      geoWatchId = null;
-    }
-    render();
-    return;
-  }
-
-  locationTracking.add(id);
-  render(); // show active state immediately
-
-  if (!navigator.geolocation) {
-    alert('Geolocation is not supported by your browser.');
-    locationTracking.delete(id);
-    render();
-    return;
-  }
-
-  startGeoWatch();
-
-  const coords = await geocode(locationStr);
-  if (!coords) {
-    alert('Could not find coordinates for this location.');
-    locationTracking.delete(id);
-    render();
-    return;
-  }
-
-  updateDistances();
-};
 
 // ─────────────────────────────────────────────
 // Boot
