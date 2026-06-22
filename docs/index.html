@@ -317,6 +317,8 @@
     @media (hover: hover) { .poi-remove:hover { border-color: var(--red); color: var(--red); } }
     .add-poi-btn { margin-top: 8px; background: none; border: 1px dashed var(--border); border-radius: var(--radius-sm); color: var(--muted); font-size: 12px; padding: 7px 12px; cursor: pointer; width: 100%; text-align: left; }
     @media (hover: hover) { .add-poi-btn:hover { border-color: var(--accent); color: var(--accent); } }
+    .loc-name-input { margin-top: 6px; font-size: 12px; color: var(--muted); }
+    .poi-name-input { margin-top: 4px; font-size: 12px; color: var(--muted); }
     .field-row { display: flex; flex-direction: column; gap: 12px; }
 
     .type-picker { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
@@ -692,6 +694,7 @@
         <input id="fLocation" type="text" placeholder="e.g. Batumi Old Town, Georgia" autocomplete="off">
         <div class="loc-suggestions" id="locSuggestions" style="display:none"></div>
       </div>
+      <input id="fLocationName" type="text" placeholder="Display name (optional)" class="loc-name-input" autocomplete="off">
     </div>
 
     <div class="field" id="poisField">
@@ -718,7 +721,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 8;
+const BUILD = 9;
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
 // Demo events — used when Supabase isn't configured yet
@@ -896,6 +899,12 @@ function progress(ev) {
   const total   = end - start;
   const elapsed = now - start;
   return Math.max(0, Math.min(1, elapsed / total));
+}
+
+function parseLoc(item) {
+  if (!item) return { address: '', name: '' };
+  if (typeof item === 'string') return { address: item, name: '' };
+  return { address: item.address || '', name: item.name || '' };
 }
 
 function isAllDay(ev) {
@@ -1391,9 +1400,9 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
       <div class="card-notes">${escHtml(ev.notes)}</div>`;
   }
 
-  function locationRowHtml(locStr, lookupKey) {
+  function locationRowHtml(locStr, lookupKey, displayName = '') {
     locationLookup[lookupKey] = locStr;
-    const short = locStr.split(',')[0].trim();
+    const label = displayName || locStr.split(',')[0].trim();
     const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(locStr)}`;
     let distHtml = '';
     if (locationEnabled && currentPosition && geocodeCache[locStr]) {
@@ -1402,15 +1411,18 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
       distHtml = `<span class="loc-distance">${formatKm(km)}</span>`;
     }
     return `<div class="card-location-row">
-      <a class="card-location" href="${mapsUrl}" target="_blank" rel="noopener"><i data-lucide="map-pin"></i>${escHtml(short)}</a>
+      <a class="card-location" href="${mapsUrl}" target="_blank" rel="noopener"><i data-lucide="map-pin"></i>${escHtml(label)}</a>
       ${distHtml}
     </div>`;
   }
 
   let locationHtml = '';
   const locRows = [];
-  if (ev.location) locRows.push(locationRowHtml(ev.location, ev.id));
-  (ev.locations || []).forEach((loc, i) => { if (loc) locRows.push(locationRowHtml(loc, `${ev.id}_poi_${i}`)); });
+  if (ev.location) locRows.push(locationRowHtml(ev.location, ev.id, ev.location_name || ''));
+  (ev.locations || []).forEach((loc, i) => {
+    const { address, name } = parseLoc(loc);
+    if (address) locRows.push(locationRowHtml(address, `${ev.id}_poi_${i}`, name));
+  });
   locationHtml = locRows.join('');
 
   const adminHtml = `
@@ -1602,7 +1614,7 @@ attachLocAutocomplete('fLocation', 'locSuggestions');
 attachLocAutocomplete('fFrom', 'locSuggestionsFrom');
 attachLocAutocomplete('fTo', 'locSuggestionsTo');
 
-function addPoi(value = '') {
+function addPoi(address = '', name = '') {
   const row = document.createElement('div');
   row.className = 'poi-row';
 
@@ -1613,11 +1625,18 @@ function addPoi(value = '') {
   input.type = 'text';
   input.placeholder = 'e.g. Freedom Square, Tbilisi';
   input.autocomplete = 'off';
-  input.value = value;
+  input.value = address;
 
   const box = document.createElement('div');
   box.className = 'loc-suggestions';
   box.style.display = 'none';
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.placeholder = 'Display name (optional)';
+  nameInput.className = 'poi-name-input';
+  nameInput.autocomplete = 'off';
+  nameInput.value = name;
 
   const removeBtn = document.createElement('button');
   removeBtn.type = 'button';
@@ -1627,6 +1646,7 @@ function addPoi(value = '') {
 
   wrap.appendChild(input);
   wrap.appendChild(box);
+  wrap.appendChild(nameInput);
   row.appendChild(wrap);
   row.appendChild(removeBtn);
 
@@ -1802,10 +1822,14 @@ function populateForm(ev) {
     document.getElementById('fStart').value = toLocalInput(ev.start_at);
     document.getElementById('fEnd').value   = toLocalInput(ev.end_at);
   }
-  document.getElementById('fNotes').value    = ev.notes    || '';
-  document.getElementById('fLocation').value = ev.location || '';
+  document.getElementById('fNotes').value        = ev.notes         || '';
+  document.getElementById('fLocation').value     = ev.location      || '';
+  document.getElementById('fLocationName').value = ev.location_name || '';
   document.getElementById('poiList').innerHTML = '';
-  (ev.locations || []).forEach(loc => addPoi(loc));
+  (ev.locations || []).forEach(loc => {
+    const { address, name } = parseLoc(loc);
+    addPoi(address, name);
+  });
 }
 
 function resetForm() {
@@ -1827,8 +1851,9 @@ function resetForm() {
   document.getElementById('fStart').value    = '';
   document.getElementById('fStartDate').value = '';
   document.getElementById('fEnd').value      = '';
-  document.getElementById('fNotes').value    = '';
-  document.getElementById('fLocation').value = '';
+  document.getElementById('fNotes').value        = '';
+  document.getElementById('fLocation').value     = '';
+  document.getElementById('fLocationName').value = '';
   document.getElementById('poiList').innerHTML = '';
 }
 
@@ -1860,9 +1885,13 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     color:    selectedColor || null,
     start_at: startAt,
     end_at:   allDay ? null : (fromLocalInput(document.getElementById('fEnd').value) || null),
-    notes:    document.getElementById('fNotes').value.trim() || null,
-    location: document.getElementById('fLocation').value.trim() || null,
-    locations: [...document.querySelectorAll('#poiList input')].map(i => i.value.trim()).filter(Boolean),
+    notes:         document.getElementById('fNotes').value.trim() || null,
+    location:      document.getElementById('fLocation').value.trim() || null,
+    location_name: document.getElementById('fLocationName').value.trim() || null,
+    locations: [...document.querySelectorAll('#poiList .poi-row')].map(row => ({
+      address: row.querySelector('input:first-of-type').value.trim(),
+      name:    row.querySelector('.poi-name-input').value.trim(),
+    })).filter(p => p.address),
     status:   editingId ? (events.find(e => e.id === editingId)?.status || 'upcoming') : 'upcoming',
   };
 
