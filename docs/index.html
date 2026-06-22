@@ -1096,18 +1096,9 @@ function renderHeader() {
     document.getElementById('tripDate').textContent =
       `${first.toLocaleDateString([], { month: 'short', day: 'numeric' })} – ${last.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
-    const now  = new Date();
-    const diff = first - now;
-    if (diff > 0) {
-      const days  = Math.floor(diff / 86400000);
-      const hours = Math.floor((diff % 86400000) / 3600000);
-      document.getElementById('countdown').innerHTML =
-        `Starts in <strong>${days}d ${hours}h</strong>`;
-    } else if (last > now) {
-      document.getElementById('countdown').innerHTML = '';
-    } else {
-      document.getElementById('countdown').textContent = 'Trip completed';
-    }
+    window._tripFirst = first;
+    window._tripLast  = last;
+    updateCountdown();
   }
   const geoEl = document.getElementById('geoStatus');
   if (geoEl) {
@@ -1675,8 +1666,34 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
 // ─────────────────────────────────────────────
 // Live progress tick
 // ─────────────────────────────────────────────
+function updateCountdown() {
+  const el = document.getElementById('countdown');
+  if (!el) return;
+  const first = window._tripFirst, last = window._tripLast;
+  if (!first) return;
+  const now = new Date(), diff = first - now;
+  if (diff > 0) {
+    let label;
+    if (diff >= 86400000) {
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      label = `${d}d ${h}h`;
+    } else {
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      label = `${h}h ${m}m`;
+    }
+    el.innerHTML = `Starts in <strong>${label}</strong>`;
+  } else if (last > now) {
+    el.innerHTML = '';
+  } else {
+    el.textContent = 'Trip completed';
+  }
+}
+
 function startTick() {
   setInterval(() => {
+    updateCountdown();
     const ctx = scheduleContext();
     if (!ctx.current) return;
 
