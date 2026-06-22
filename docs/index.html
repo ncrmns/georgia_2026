@@ -1718,7 +1718,7 @@ function startRefresh() {
 // ─────────────────────────────────────────────
 
 let   locationEnabled    = false;        // global location tracking toggle
-const geocodeCache       = {};          // location string -> {lat, lng}
+const geocodeCache       = JSON.parse(localStorage.getItem('geocodeCache') || '{}'); // persisted across reloads
 const locationLookup     = {};          // card id -> location string (set during render)
 const travelDistCache    = {};          // ev id -> { totalKm, fromCoords, toCoords } | 'loading' | 'error'
 let   geoWatchId         = null;
@@ -1741,14 +1741,21 @@ function formatKm(km) {
 
 async function geocode(locationStr) {
   if (geocodeCache[locationStr]) return geocodeCache[locationStr];
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationStr)}&format=json&limit=1`;
-  const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-  const data = await res.json();
-  if (!data.length) return null;
-  const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-  geocodeCache[locationStr] = coords;
-  if (locationEnabled) render();
-  return coords;
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationStr)}&format=json&limit=1`;
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    const data = await res.json();
+    if (!data.length) return null;
+    const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    geocodeCache[locationStr] = coords;
+    try { localStorage.setItem('geocodeCache', JSON.stringify(geocodeCache)); } catch {}
+    if (locationEnabled) render();
+    return coords;
+  } catch (e) {
+    geoError = `Geocoding failed: ${e.message}`;
+    render();
+    return null;
+  }
 }
 
 function fetchPosition() {
