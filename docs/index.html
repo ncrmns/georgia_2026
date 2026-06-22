@@ -195,6 +195,13 @@
     }
     .pinned-note:last-child { border-bottom: none; }
     .pinned-note-text { flex: 1; }
+    .pinned-note-address {
+      display: flex; align-items: center; gap: 6px; flex: 1;
+      color: var(--text); text-decoration: none; font-size: 14px;
+    }
+    .pinned-note-address:hover { color: var(--accent); }
+    .pinned-note-address svg { width: 13px; height: 13px; flex-shrink: 0; stroke: var(--accent); }
+    .pinned-note-address span { color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-right: 2px; }
     .pinned-note-del {
       display: none; background: none; border: none;
       color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px;
@@ -955,20 +962,32 @@ function renderPinned() {
 
   let html = '<div class="pinned-notes">';
   for (const n of notes) {
-    html += `<div class="pinned-note">
-      <span class="pinned-note-text">${escHtml(n.title)}</span>
-      <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
-    </div>`;
+    if (n.icon === 'map-pin') {
+      const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(n.title)}`;
+      html += `<div class="pinned-note">
+        <a class="pinned-note-address" href="${mapsUrl}" target="_blank" rel="noopener">
+          <i data-lucide="map-pin"></i><span>Address</span>${escHtml(n.title)}
+        </a>
+        <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
+      </div>`;
+    } else {
+      html += `<div class="pinned-note">
+        <span class="pinned-note-text">${escHtml(n.title)}</span>
+        <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
+      </div>`;
+    }
   }
   if (isAdmin) {
+    const inputStyle = 'flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit;';
+    const btnStyle   = 'background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap';
     html += `<div class="pinned-note" id="addNoteRow" style="gap:6px">
-      <input id="noteInput" type="text" placeholder="Add a note…"
-        style="flex:1;background:none;border:none;outline:none;font-size:16px;color:var(--text);font-family:inherit;"
-        onkeydown="if(event.key==='Enter')saveNote()" />
-      <button onclick="saveNote()"
-        style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
-        Add
-      </button>
+      <input id="noteInput" type="text" placeholder="Add a note…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveNote()" />
+      <button onclick="saveNote()" style="${btnStyle}">Add</button>
+    </div>`;
+    html += `<div class="pinned-note" style="gap:6px">
+      <i data-lucide="map-pin" style="width:13px;height:13px;stroke:var(--accent);flex-shrink:0"></i>
+      <input id="addressInput" type="text" placeholder="Pin an address…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveAddress()" />
+      <button onclick="saveAddress()" style="${btnStyle}">Add</button>
     </div>`;
   }
   html += '</div>';
@@ -1316,6 +1335,21 @@ window.saveNote = async () => {
   });
   input.disabled = false;
   if (error) { alert('Failed to save note: ' + error.message); return; }
+  input.value = '';
+  await loadEvents();
+};
+
+window.saveAddress = async () => {
+  const input = document.getElementById('addressInput');
+  const text = input?.value.trim();
+  if (!text) return;
+  input.disabled = true;
+  const { error } = await sb.from('events').insert({
+    trip_id: TRIP_ID, type: 'note', icon: 'map-pin',
+    title: text, start_at: new Date().toISOString(), status: 'upcoming'
+  });
+  input.disabled = false;
+  if (error) { alert('Failed to save address: ' + error.message); return; }
   input.value = '';
   await loadEvents();
 };
