@@ -626,11 +626,11 @@
     <div class="field-row" id="routeField" style="display:none">
       <div class="field">
         <label>From</label>
-        <input type="text" id="fFrom" placeholder="e.g. Budapest" />
+        <input type="text" id="fFrom" placeholder="e.g. Budapest, Hungary" />
       </div>
       <div class="field">
         <label>To</label>
-        <input type="text" id="fTo" placeholder="e.g. Kutaisi" />
+        <input type="text" id="fTo" placeholder="e.g. Kutaisi, Georgia" />
       </div>
     </div>
 
@@ -645,7 +645,7 @@
       </div>
     </div>
 
-    <div class="field">
+    <div class="field" id="locationField">
       <label>Location <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
       <input id="fLocation" type="text" placeholder="e.g. Batumi Old Town, Georgia">
     </div>
@@ -1159,8 +1159,37 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
   const startsInLabel = showStartsIn && startsInMs > 0 ? `<span class="starts-in">in ${formatTimeLeft(startsInMs).replace(' left','')}</span>` : '';
   const typeClass2 = ev.type === 'travel' ? ' type-travel' : ev.type === 'deadline' ? ' type-deadline' : '';
 
+  const isPlane = ev.type === 'travel' && ev.icon === 'plane';
+  const useDistProgress = showProgress && ev.type === 'travel' && !isPlane;
+
   let progressHtml = '';
-  if (showProgress && p !== null) {
+  if (useDistProgress) {
+    if (!travelDistCache[ev.id]) initTravelDist(ev);
+    if (navigator.geolocation) startGeoWatch();
+    const cache = travelDistCache[ev.id];
+    const dist = (cache && cache !== 'loading' && cache !== 'error') ? cache : null;
+    let barPct = 0, centerLabel = '…';
+    if (dist) {
+      if (currentPosition) {
+        const remKm = haversineKm(currentPosition.lat, currentPosition.lng, dist.toCoords.lat, dist.toCoords.lng);
+        barPct = Math.round(Math.max(0, Math.min(1, (dist.totalKm - remKm) / dist.totalKm)) * 100);
+        centerLabel = formatKm(remKm) + ' left';
+      } else {
+        centerLabel = formatKm(dist.totalKm) + ' total';
+      }
+    }
+    progressHtml = `
+      <div class="progress-wrap">
+        <div class="progress-track">
+          <div class="progress-fill" style="width:${barPct}%"></div>
+        </div>
+        <div class="progress-labels">
+          <span>${formatTime(ev.start_at)}</span>
+          <span>${centerLabel}</span>
+          <span>${ev.end_at ? formatTime(ev.end_at) : ''}</span>
+        </div>
+      </div>`;
+  } else if (showProgress && p !== null) {
     const timeLeftLabel = isLate ? 'overtime' : formatTimeLeft(new Date(ev.end_at) - new Date());
     progressHtml = `
       <div class="progress-wrap">
@@ -1330,10 +1359,11 @@ document.querySelectorAll('.type-option').forEach(opt => {
 
 function updateFormForType() {
   const isTravel = selectedType === 'travel';
-  document.getElementById('vehicleField').style.display = isTravel ? '' : 'none';
-  document.getElementById('iconField').style.display    = isTravel ? 'none' : '';
-  document.getElementById('routeField').style.display   = isTravel ? '' : 'none';
-  document.getElementById('titleField').style.display   = isTravel ? 'none' : '';
+  document.getElementById('vehicleField').style.display  = isTravel ? '' : 'none';
+  document.getElementById('iconField').style.display     = isTravel ? 'none' : '';
+  document.getElementById('routeField').style.display    = isTravel ? '' : 'none';
+  document.getElementById('titleField').style.display    = isTravel ? 'none' : '';
+  document.getElementById('locationField').style.display = isTravel ? 'none' : '';
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
@@ -1525,6 +1555,7 @@ const locationTracking   = new Set();   // card ids with tracking on
 const locationDistances  = {};          // card id -> formatted distance string
 const geocodeCache       = {};          // location string -> {lat, lng}
 const locationLookup     = {};          // card id -> location string (set during render)
+const travelDistCache    = {};          // ev id -> { totalKm, fromCoords, toCoords } | 'loading' | 'error'
 let   geoWatchId         = null;
 let   currentPosition    = null;
 
@@ -1572,10 +1603,28 @@ function updateDistances() {
 function startGeoWatch() {
   if (geoWatchId !== null) return;
   geoWatchId = navigator.geolocation.watchPosition(
-    pos => { currentPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude }; updateDistances(); },
+    pos => {
+      const prev = currentPosition;
+      currentPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      updateDistances();
+      // Re-render if a non-plane travel card is active (for distance progress bar)
+      if (!prev) render();
+    },
     () => {},
     { enableHighAccuracy: false, maximumAge: 30000 }
   );
+}
+
+async function initTravelDist(ev) {
+  if (travelDistCache[ev.id]) return;
+  travelDistCache[ev.id] = 'loading';
+  const parts = ev.title.split(/\s*->\s*/);
+  if (parts.length < 2) { travelDistCache[ev.id] = 'error'; return; }
+  const [fromCoords, toCoords] = await Promise.all([geocode(parts[0].trim()), geocode(parts.slice(1).join(' -> ').trim())]);
+  if (!fromCoords || !toCoords) { travelDistCache[ev.id] = 'error'; return; }
+  const totalKm = haversineKm(fromCoords.lat, fromCoords.lng, toCoords.lat, toCoords.lng);
+  travelDistCache[ev.id] = { totalKm, fromCoords, toCoords };
+  render();
 }
 
 window.toggleLocationTracking = async (id) => {
