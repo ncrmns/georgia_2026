@@ -298,6 +298,18 @@
     }
     .field textarea { min-height: 80px; resize: vertical; }
     .field select option { background: var(--surface2); }
+    .loc-suggestions {
+      position: absolute; left: 0; right: 0; top: calc(100% + 4px);
+      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      z-index: 200; overflow: hidden;
+    }
+    .loc-suggestion {
+      padding: 10px 12px; font-size: 13px; cursor: pointer; color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+    .loc-suggestion:last-child { border-bottom: none; }
+    .loc-suggestion:hover, .loc-suggestion.active { background: var(--surface); color: var(--accent); }
+    .loc-suggestion small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
     .field-row { display: flex; flex-direction: column; gap: 12px; }
 
     .type-picker { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
@@ -658,7 +670,10 @@
 
     <div class="field" id="locationField">
       <label>Location <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-      <input id="fLocation" type="text" placeholder="e.g. Batumi Old Town, Georgia">
+      <div style="position:relative">
+        <input id="fLocation" type="text" placeholder="e.g. Batumi Old Town, Georgia" autocomplete="off">
+        <div class="loc-suggestions" id="locSuggestions" style="display:none"></div>
+      </div>
     </div>
 
     <div class="field">
@@ -1469,6 +1484,74 @@ window.openEdit = (id) => {
   document.getElementById('modalOverlay').classList.add('open');
   lucide.createIcons();
 };
+
+// ── Location autocomplete ──
+(function () {
+  const input = document.getElementById('fLocation');
+  const box   = document.getElementById('locSuggestions');
+  let timer, activeIdx = -1, results = [];
+
+  async function search(q) {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=1`;
+    try {
+      const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+      results = await res.json();
+    } catch { results = []; }
+    activeIdx = -1;
+    render();
+  }
+
+  function displayName(r) {
+    const a = r.address || {};
+    const primary = a.amenity || a.tourism || a.leisure || a.shop || a.historic || r.name || r.display_name.split(',')[0];
+    const secondary = [a.city || a.town || a.village, a.country].filter(Boolean).join(', ');
+    return { primary, secondary };
+  }
+
+  function render() {
+    if (!results.length) { box.style.display = 'none'; return; }
+    box.innerHTML = results.map((r, i) => {
+      const { primary, secondary } = displayName(r);
+      return `<div class="loc-suggestion${i === activeIdx ? ' active' : ''}" data-idx="${i}">
+        ${primary}<small>${secondary}</small>
+      </div>`;
+    }).join('');
+    box.style.display = 'block';
+  }
+
+  function select(r) {
+    const { primary, secondary } = displayName(r);
+    input.value = [primary, secondary].filter(Boolean).join(', ');
+    results = []; box.style.display = 'none';
+    // Pre-cache the geocode result
+    geocodeCache[input.value] = { lat: parseFloat(r.lat), lng: parseFloat(r.lon) };
+    try { localStorage.setItem('geocodeCache', JSON.stringify(geocodeCache)); } catch {}
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    if (q.length < 3) { results = []; box.style.display = 'none'; return; }
+    timer = setTimeout(() => search(q), 350);
+  });
+
+  input.addEventListener('keydown', e => {
+    if (!results.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, results.length - 1); render(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); render(); }
+    else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); select(results[activeIdx]); }
+    else if (e.key === 'Escape') { results = []; box.style.display = 'none'; }
+  });
+
+  box.addEventListener('mousedown', e => {
+    const el = e.target.closest('.loc-suggestion');
+    if (el) { e.preventDefault(); select(results[+el.dataset.idx]); }
+  });
+
+  document.addEventListener('click', e => {
+    if (!input.contains(e.target) && !box.contains(e.target)) { results = []; box.style.display = 'none'; }
+  });
+})();
 
 document.getElementById('addEventBtn').addEventListener('click', () => {
   editingId = null;
