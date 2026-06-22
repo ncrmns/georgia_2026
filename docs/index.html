@@ -1339,9 +1339,13 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
   if (ev.location) {
     const short = ev.location.split(',')[0].trim();
     const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(ev.location)}`;
-    const dist = locationDistances[ev.id];
-    const distHtml = dist != null ? `<span class="loc-distance">${dist}</span>` : '';
     locationLookup[ev.id] = ev.location;
+    let distHtml = '';
+    if (locationEnabled && currentPosition && geocodeCache[ev.location]) {
+      const c = geocodeCache[ev.location];
+      const km = haversineKm(currentPosition.lat, currentPosition.lng, c.lat, c.lng);
+      distHtml = `<span class="loc-distance">${formatKm(km)}</span>`;
+    }
     locationHtml = `<div class="card-location-row">
       <a class="card-location" href="${mapsUrl}" target="_blank" rel="noopener"><i data-lucide="map-pin"></i>${escHtml(short)}</a>
       ${distHtml}
@@ -1692,7 +1696,6 @@ function startRefresh() {
 // ─────────────────────────────────────────────
 
 let   locationEnabled    = false;        // global location tracking toggle
-const locationDistances  = {};          // card id -> formatted distance string
 const geocodeCache       = {};          // location string -> {lat, lng}
 const locationLookup     = {};          // card id -> location string (set during render)
 const travelDistCache    = {};          // ev id -> { totalKm, fromCoords, toCoords } | 'loading' | 'error'
@@ -1722,22 +1725,8 @@ async function geocode(locationStr) {
   if (!data.length) return null;
   const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
   geocodeCache[locationStr] = coords;
-  updateDistances();
+  if (locationEnabled) render();
   return coords;
-}
-
-function updateDistances() {
-  if (!currentPosition || !locationEnabled) return;
-  const { lat, lng } = currentPosition;
-  let changed = false;
-  for (const [id, locStr] of Object.entries(locationLookup)) {
-    const coords = geocodeCache[locStr];
-    if (!coords) continue;
-    const km = haversineKm(lat, lng, coords.lat, coords.lng);
-    const fmt = formatKm(km);
-    if (locationDistances[id] !== fmt) { locationDistances[id] = fmt; changed = true; }
-  }
-  if (changed) render();
 }
 
 function fetchPosition() {
@@ -1781,7 +1770,6 @@ window.toggleGlobalLocation = async () => {
     currentPosition = null;
     geoError = null;
     if (geoWatchId !== null) { clearInterval(geoWatchId); geoWatchId = null; }
-    for (const id of Object.keys(locationDistances)) delete locationDistances[id];
     document.getElementById('navBtn')?.classList.remove('active');
     render();
     return;
@@ -1792,9 +1780,8 @@ window.toggleGlobalLocation = async () => {
   if (!navigator.geolocation) { geoError = 'Geolocation not supported.'; render(); return; }
   geoError = null;
   startGeoWatch();
-  // Geocode all known locations, then immediately compute distances with any cached position
-  await Promise.all(Object.values(locationLookup).map(locStr => geocode(locStr)));
-  updateDistances();
+  // Kick off geocoding for all known locations (each will render when ready)
+  Object.values(locationLookup).forEach(locStr => geocode(locStr));
 };
 
 async function initTravelDist(ev) {
