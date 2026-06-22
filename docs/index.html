@@ -685,6 +685,15 @@
         <label>End (optional)</label>
         <input type="datetime-local" id="fEnd" />
       </div>
+      <div class="field" id="fDurationField" style="display:none">
+        <label>Duration</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="number" id="fDurH" min="0" max="30" placeholder="h" style="width:60px;text-align:center">
+          <span style="color:var(--muted);font-size:13px">h</span>
+          <input type="number" id="fDurM" min="0" max="59" placeholder="m" style="width:60px;text-align:center">
+          <span style="color:var(--muted);font-size:13px">m</span>
+        </div>
+      </div>
     </div>
 
     <div class="field" id="locationField">
@@ -720,7 +729,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 14;
+const BUILD = 15;
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
 // Demo events — used when Supabase isn't configured yet
@@ -1341,14 +1350,19 @@ function travelRouteHtml(ev) {
 function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn = false) {
   const allDay = isAllDay(ev);
   const p   = progress(ev);
-  const end = (!allDay && ev.end_at) ? ` – ${formatTime(ev.end_at)}` : '';
+  const isPlane = ev.type === 'travel' && ev.icon === 'plane';
+  const planeDuration = isPlane && ev.end_at ? (() => {
+    const mins = Math.round((new Date(ev.end_at) - new Date(ev.start_at)) / 60000);
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return m ? `${h}h ${m}m` : `${h}h`;
+  })() : '';
+  const end = (!allDay && ev.end_at && !isPlane) ? ` – ${formatTime(ev.end_at)}` : (planeDuration ? ` · ${planeDuration}` : '');
   const timeDisplay = allDay ? `<span class="card-time" style="letter-spacing:0.02em">?</span>` : `<span class="card-time">${formatTime(ev.start_at)}${end}</span>`;
   const isLate = !allDay && new Date() > new Date(ev.end_at || ev.start_at) && ev.status !== 'done';
   const startsInMs = new Date(ev.start_at) - new Date();
   const startsInLabel = showStartsIn && startsInMs > 0 ? `<span class="starts-in">in ${formatTimeLeft(startsInMs).replace(' left','')}</span>` : '';
   const typeClass2 = ev.type === 'travel' ? ' type-travel' : ev.type === 'deadline' ? ' type-deadline' : '';
 
-  const isPlane = ev.type === 'travel' && ev.icon === 'plane';
   const useDistProgress = showProgress && ev.type === 'travel' && !isPlane;
 
   let progressHtml = '';
@@ -1393,7 +1407,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
         <div class="progress-labels">
           <span>${formatTime(ev.start_at)}</span>
           <span>${timeLeftLabel}</span>
-          <span>${formatTime(ev.end_at)}</span>
+          <span>${isPlane ? planeDuration : formatTime(ev.end_at)}</span>
         </div>
       </div>`;
   }
@@ -1707,7 +1721,18 @@ function updateFormForType() {
   document.getElementById('routeField').style.display    = isTravel ? '' : 'none';
   document.getElementById('titleField').style.display    = isTravel ? 'none' : '';
   document.getElementById('locationField').style.display = isTravel ? 'none' : '';
+  if (isTravel) updateDurationField();
+  else {
+    document.getElementById('fEndField').style.display      = '';
+    document.getElementById('fDurationField').style.display = 'none';
+  }
   if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function updateDurationField() {
+  const isPlane = selectedVehicle === 'plane';
+  document.getElementById('fEndField').style.display      = isPlane ? 'none' : '';
+  document.getElementById('fDurationField').style.display = isPlane ? '' : 'none';
 }
 
 // Vehicle picker
@@ -1716,6 +1741,7 @@ document.querySelectorAll('.vehicle-opt').forEach(opt => {
     document.querySelectorAll('.vehicle-opt').forEach(o => o.classList.remove('selected'));
     opt.classList.add('selected');
     selectedVehicle = opt.dataset.vehicle;
+    updateDurationField();
   });
 });
 
@@ -1774,6 +1800,7 @@ function setSelectedVehicle(icon) {
   document.querySelectorAll('.vehicle-opt').forEach(o => {
     o.classList.toggle('selected', o.dataset.vehicle === selectedVehicle);
   });
+  updateDurationField();
 }
 
 function setSelectedColor(color) {
@@ -1822,9 +1849,17 @@ function populateForm(ev) {
   } else {
     document.getElementById('fStart').style.display = '';
     document.getElementById('fStartDate').style.display = 'none';
-    document.getElementById('fEndField').style.display = '';
     document.getElementById('fStart').value = toLocalInput(ev.start_at);
-    document.getElementById('fEnd').value   = toLocalInput(ev.end_at);
+    if (ev.icon === 'plane' && ev.end_at && ev.start_at) {
+      const mins = Math.round((new Date(ev.end_at) - new Date(ev.start_at)) / 60000);
+      document.getElementById('fDurH').value = Math.floor(mins / 60);
+      document.getElementById('fDurM').value = mins % 60;
+      document.getElementById('fEnd').value  = '';
+    } else {
+      document.getElementById('fEnd').value  = toLocalInput(ev.end_at);
+      document.getElementById('fDurH').value = '';
+      document.getElementById('fDurM').value = '';
+    }
   }
   document.getElementById('fNotes').value        = ev.notes         || '';
   document.getElementById('fLocation').value     = ev.location      || '';
@@ -1855,6 +1890,8 @@ function resetForm() {
   document.getElementById('fStart').value    = '';
   document.getElementById('fStartDate').value = '';
   document.getElementById('fEnd').value      = '';
+  document.getElementById('fDurH').value     = '';
+  document.getElementById('fDurM').value     = '';
   document.getElementById('fNotes').value        = '';
   document.getElementById('fLocation').value     = '';
   document.getElementById('fLocationName').value = '';
@@ -1888,7 +1925,16 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     icon:     resolvedIcon || null,
     color:    selectedColor || null,
     start_at: startAt,
-    end_at:   allDay ? null : (fromLocalInput(document.getElementById('fEnd').value) || null),
+    end_at:   (() => {
+      if (allDay) return null;
+      if (selectedVehicle === 'plane') {
+        const h = parseInt(document.getElementById('fDurH').value) || 0;
+        const m = parseInt(document.getElementById('fDurM').value) || 0;
+        const durMs = (h * 60 + m) * 60000;
+        return durMs > 0 ? new Date(new Date(startAt).getTime() + durMs).toISOString() : null;
+      }
+      return fromLocalInput(document.getElementById('fEnd').value) || null;
+    })(),
     notes:         document.getElementById('fNotes').value.trim() || null,
     location:      document.getElementById('fLocation').value.trim() || null,
     location_name: document.getElementById('fLocationName').value.trim() || null,
