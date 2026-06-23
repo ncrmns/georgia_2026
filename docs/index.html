@@ -292,6 +292,12 @@
     .map-controls > *:nth-child(1) { animation-delay: 0ms; }
     .map-controls > *:nth-child(2) { animation-delay: 60ms; }
     .map-controls > *:nth-child(3) { animation-delay: 110ms; }
+    .map-controls.closing > * {
+      animation: map-btn-in .25s cubic-bezier(0.55,0,1,0.45) both reverse;
+    }
+    .map-controls.closing > *:nth-child(1) { animation-delay: 110ms; }
+    .map-controls.closing > *:nth-child(2) { animation-delay: 60ms; }
+    .map-controls.closing > *:nth-child(3) { animation-delay: 0ms; }
     @keyframes map-btn-in {
       from { opacity: 0; transform: translateY(calc(-1 * (var(--map-controls-top, 90px)))); }
       to   { opacity: 1; transform: translateY(0); }
@@ -896,7 +902,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 92;
+const BUILD = 93;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2298,7 +2304,19 @@ window.toggleMap = async (forceOpen = false) => {
   const isOpen = forceOpen ? (overlay.classList.add('open'), true) : overlay.classList.toggle('open');
   header?.classList.toggle('map-open', isOpen);
   document.getElementById('mapBtn')?.classList.toggle('active', isOpen);
-  document.getElementById('mapControls').style.display = isOpen ? '' : 'none';
+  const mapControls = document.getElementById('mapControls');
+  if (isOpen) {
+    mapControls.classList.remove('closing');
+    mapControls.style.display = '';
+  } else {
+    mapControls.classList.add('closing');
+    setTimeout(() => {
+      if (mapControls.classList.contains('closing')) {
+        mapControls.style.display = 'none';
+        mapControls.classList.remove('closing');
+      }
+    }, 400);
+  }
   if (isOpen) { updateMapZoomButtons(); }
   if (!isOpen) {
     if (mapInstance) {
