@@ -7,7 +7,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Georgia 2026</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/open-location-code@1.0.4/openlocationcode.js"></script>
+  <script>var exports = {};</script>
+  <script src="https://cdn.jsdelivr.net/npm/open-location-code/openlocationcode.js"></script>
+  <script>var OLC = new exports.OpenLocationCode();</script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <link href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css" rel="stylesheet">
   <script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
@@ -906,7 +908,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 105;
+const BUILD = 106;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2682,21 +2684,23 @@ function formatKm(km) {
   return `${Math.round(km)} km`;
 }
 
+// ── Plus Code (Open Location Code) support ──
 function isPlusCode(s) {
-  // matches full (8FX5WXHP+WP) or compound (8FXP+WP Tbilisi) plus codes
-  return /^[23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]{2,}(\s+.+)?$/i.test(s.trim());
+  const t = s.trim().toUpperCase();
+  const plus = t.indexOf('+');
+  if (plus < 2 || plus > 8) return false;
+  const codePart = t.slice(0, plus + 3).replace('+', '');
+  return [...codePart].every(c => '23456789CFGHJMPQRVWX'.includes(c));
 }
 
 async function geocodePlusCode(locationStr) {
-  const OLC = window.OpenLocationCode;
-  if (!OLC) return null;
   const str = locationStr.trim();
-  const plusIdx = str.indexOf('+');
-  const codePart = str.slice(0, plusIdx + 3).trim(); // e.g. "8FX5WXHP+WP"
-  const cityPart = str.slice(plusIdx + 3).trim();     // e.g. "Tbilisi, Georgia"
+  const plus = str.indexOf('+');
+  const codePart = str.slice(0, plus + 3).trim();
+  const cityPart = str.slice(plus + 3).trim();
   try {
     let fullCode = codePart;
-    if (!OLC.isValid(codePart) || OLC.isShort(codePart)) {
+    if (OLC.isShort(codePart)) {
       if (!cityPart) return null;
       const ref = await geocode(cityPart);
       if (!ref) return null;
