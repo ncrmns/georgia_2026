@@ -295,6 +295,16 @@
     .map-zoom-group .map-zoom-btn + .map-zoom-btn {
       border-top: 1px solid var(--border);
     }
+    .map-trip-header {
+      position: absolute; bottom: 20px; left: 16px; z-index: 10;
+      background: rgba(28,28,30,.45); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
+      padding: 10px 14px; pointer-events: none;
+    }
+    .map-trip-header .trip-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .map-trip-sub { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
+    .map-trip-header .trip-date { font-size: 12px; color: var(--muted); }
+    .map-trip-header .countdown { font-size: 12px; margin-top: 0; }
     #mapLocationsPanel {
       position: absolute; top: 0; left: 0; bottom: 0; width: 300px; z-index: 10;
       background: transparent; border-right: none;
@@ -712,6 +722,13 @@
 
 <!-- Event editor modal -->
 <div id="mapOverlay">
+  <div class="map-trip-header">
+    <div class="trip-title" id="mapTripTitle"></div>
+    <div class="map-trip-sub">
+      <div class="trip-date" id="mapTripDate"></div>
+      <div class="countdown" id="mapCountdown"></div>
+    </div>
+  </div>
   <div class="map-controls">
     <button class="lock-btn" onclick="toggleMap()" title="Close map"><i data-lucide="x"></i></button>
     <div class="map-zoom-group">
@@ -884,7 +901,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 76;
+const BUILD = 77;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1339,14 +1356,16 @@ function bindNoteDrag(el) {
 
 function renderHeader() {
   document.getElementById('tripTitle').textContent = 'Georgia 2026';
+  document.getElementById('mapTripTitle').textContent = 'Georgia 2026';
   updateDotOnlineState();
 
   const sorted = [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
   if (sorted.length) {
     const first = new Date(sorted[0].start_at);
     const last  = new Date(sorted[sorted.length - 1].start_at);
-    document.getElementById('tripDate').textContent =
-      `${first.toLocaleDateString([], { month: 'short', day: 'numeric' })} – ${last.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    const dateStr = `${first.toLocaleDateString([], { month: 'short', day: 'numeric' })} – ${last.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    document.getElementById('tripDate').textContent = dateStr;
+    document.getElementById('mapTripDate').textContent = dateStr;
 
     window._tripFirst = first;
     window._tripLast  = last;
@@ -2531,10 +2550,12 @@ function refreshMapMarkers(adjustViewport = false) {
 // ─────────────────────────────────────────────
 function updateCountdown() {
   const el = document.getElementById('countdown');
+  const mapEl = document.getElementById('mapCountdown');
   if (!el) return;
   const first = window._tripFirst, last = window._tripLast;
   if (!first) return;
   const now = new Date(), diff = first - now;
+  let html;
   if (diff > 0) {
     let label;
     if (diff >= 86400000) {
@@ -2546,12 +2567,14 @@ function updateCountdown() {
       const m = Math.floor((diff % 3600000) / 60000);
       label = `${h}h ${m}m`;
     }
-    el.innerHTML = `Starts in <strong>${label}</strong>`;
+    html = `Starts in <strong>${label}</strong>`;
   } else if (last > now) {
-    el.innerHTML = '';
+    html = '';
   } else {
-    el.textContent = 'Trip completed';
+    html = 'Trip completed';
   }
+  el.innerHTML = html;
+  if (mapEl) mapEl.innerHTML = html;
 }
 
 function startTick() {
