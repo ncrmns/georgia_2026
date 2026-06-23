@@ -779,7 +779,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 54;
+const BUILD = 55;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2187,8 +2187,10 @@ window.toggleMap = async (forceOpen = false) => {
   if (!mapInstance) {
     initMap();
   } else {
-    const saved = (() => { try { return JSON.parse(localStorage.getItem('mapView')); } catch { return null; } })();
-    if (saved) mapInstance.jumpTo({ center: [saved.lng, saved.lat], zoom: saved.zoom });
+    if (!forceOpen) {
+      const saved = (() => { try { return JSON.parse(localStorage.getItem('mapView')); } catch { return null; } })();
+      if (saved) mapInstance.jumpTo({ center: [saved.lng, saved.lat], zoom: saved.zoom });
+    }
     refreshMapMarkers();
   }
   // Realtime subscription for user locations
@@ -2562,8 +2564,7 @@ window.flyToAddress = async (locStr) => {
   if (!mapInstance) return;
   const fly = () => mapInstance.flyTo({ center: [coords.lng, coords.lat], zoom: 17 });
   if (mapInstance.loaded()) {
-    // Use idle so it runs after any jumpTo/refreshMapMarkers the open flow triggered
-    mapInstance.once('idle', fly);
+    fly();
   } else {
     mapInstance.once('load', fly);
   }
