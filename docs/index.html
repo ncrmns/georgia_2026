@@ -302,7 +302,7 @@
       border-top: 1px solid var(--border);
     }
     #mapLocationsPanel {
-      position: absolute; top: 0; left: 0; bottom: 0; width: 300px; z-index: 10;
+      position: absolute; top: var(--header-h, 90px); left: 0; bottom: 0; width: 300px; z-index: 10;
       background: transparent; border-right: none;
       display: flex; flex-direction: column; transform: translateX(-100%);
       transition: transform .25s ease; pointer-events: none;
@@ -891,7 +891,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 82;
+const BUILD = 83;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
