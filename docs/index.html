@@ -710,7 +710,7 @@
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="lock-btn" id="copyBtn" title="Copy page URL"><i data-lucide="link"></i></button>
-        <button class="lock-btn" id="lockBtn" title="Admin login"><i data-lucide="lock"></i></button>
+        <button class="lock-btn" id="lockBtn" title="Admin login"><i data-lucide="plus"></i></button>
         <button class="lock-btn" id="navBtn" title="Toggle location" onclick="toggleGlobalLocation()"><i data-lucide="navigation"></i></button>
         <button class="lock-btn" id="mapBtn" title="Map view" onclick="toggleMap()"><i id="mapBtnIcon" data-lucide="map"></i></button>
       </div>
@@ -907,7 +907,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 115;
+const BUILD = 116;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -953,7 +953,7 @@ document.getElementById('lockBtn').addEventListener('click', () => {
   if (isAdmin) {
     isAdmin = false;
     btn.classList.remove('active');
-    btn.innerHTML = '<i data-lucide="lock"></i>'; lucide.createIcons();
+    btn.innerHTML = '<i data-lucide="plus"></i>'; lucide.createIcons();
     document.getElementById('adminBar').classList.remove('visible');
     document.body.classList.remove('is-admin');
     document.getElementById('mapLocationsPanel')?.classList.remove('open');
@@ -961,7 +961,7 @@ document.getElementById('lockBtn').addEventListener('click', () => {
   } else {
     isAdmin = true;
     btn.classList.add('active');
-    btn.innerHTML = '<i data-lucide="lock-open"></i>'; lucide.createIcons();
+    btn.innerHTML = '<i data-lucide="lock-open"></i>'; lucide.createIcons(); // keep lock-open for active admin
     document.getElementById('adminBar').classList.add('visible');
     document.body.classList.add('is-admin');
     render();
@@ -1237,7 +1237,11 @@ function scrollToNow() {
   const nowLabel = [...document.querySelectorAll('.section-label')]
     .find(el => el.textContent.trim() === 'Now');
   if (nowLabel) {
-    setTimeout(() => nowLabel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400);
+    setTimeout(() => {
+      const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 90;
+      const top = nowLabel.getBoundingClientRect().top + window.scrollY - headerH - 8;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }, 400);
   }
 }
 
