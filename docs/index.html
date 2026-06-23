@@ -902,7 +902,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 95;
+const BUILD = 96;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1208,54 +1208,45 @@ function scrollToNow() {
 
 function renderPinned() {
   const el = document.getElementById('pinnedSection');
-  const visibleNotes = isAdmin ? notes : notes.filter(n => !n.hidden);
-  if (!visibleNotes.length && !isAdmin) { el.innerHTML = ''; return; }
+  // isLocNote items live in the map panel, not here
+  const pinable = notes.filter(n => !isLocNote(n));
+  const visible  = pinable.filter(n => !n.hidden);
+  if (!pinable.length && !isAdmin) { el.innerHTML = ''; return; }
 
-  let html = '<div class="pinned-notes">';
-  for (const n of notes) {
-    if (!isAdmin && n.hidden) continue;
-    const drag = isAdmin ? `<span class="drag-handle"><i data-lucide="grip-vertical"></i></span>` : '';
-    const eyeBtn = isAdmin
-      ? `<button class="pinned-note-del" onclick="toggleNoteHidden('${n.id}')" title="${n.hidden ? 'Show' : 'Hide'}"><i data-lucide="${n.hidden ? 'eye-off' : 'eye'}"></i></button>`
-      : '';
-    const delBtn = isAdmin ? `<button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>` : '';
+  const inputStyle = 'flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit;';
+  const btnStyle   = 'background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap';
+
+  function noteRow(n) {
+    const drag    = isAdmin ? `<span class="drag-handle"><i data-lucide="grip-vertical"></i></span>` : '';
+    const eyeBtn  = isAdmin ? `<button class="pinned-note-del" onclick="toggleNoteHidden('${n.id}')" title="${n.hidden?'Show':'Hide'}"><i data-lucide="${n.hidden?'eye-off':'eye'}"></i></button>` : '';
+    const delBtn  = isAdmin ? `<button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>` : '';
     const opacity = n.hidden ? 'opacity:.4;' : '';
     if (n.icon === 'link') {
       const label = n.notes || n.title;
-      html += `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
-        ${drag}
-        <a class="pinned-note-address" href="${escHtml(n.title)}" target="_blank" rel="noopener" onclick="if(isAdmin){return false;}">
-          <i data-lucide="link"></i>${escHtml(label)}
-        </a>
-        ${eyeBtn}${delBtn}
-      </div>`;
-    } else if (isLocNote(n)) {
-      const label = n.notes || n.title.split(',')[0].trim();
-      html += `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
-        ${drag}
-        <a class="pinned-note-address" href="#" onclick="if(!isAdmin){flyToAddress(decodeURIComponent('${encodeURIComponent(n.title)}'));}return false;">
-          <i data-lucide="map-pin"></i>${escHtml(label)}
-        </a>
-        ${eyeBtn}${delBtn}
-      </div>`;
-    } else {
-      html += `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
-        ${drag}
-        <i data-lucide="pin" class="pinned-note-icon"></i>
-        <span class="pinned-note-text">${escHtml(n.title)}</span>
-        ${eyeBtn}${delBtn}
-      </div>`;
+      return `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
+        ${drag}<a class="pinned-note-address" href="${escHtml(n.title)}" target="_blank" rel="noopener" onclick="if(isAdmin){return false;}">
+          <i data-lucide="link"></i>${escHtml(label)}</a>${eyeBtn}${delBtn}</div>`;
     }
+    return `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
+      ${drag}<i data-lucide="pin" class="pinned-note-icon"></i>
+      <span class="pinned-note-text">${escHtml(n.title)}</span>${eyeBtn}${delBtn}</div>`;
   }
-  if (isAdmin) {
-    const inputStyle = 'flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit;';
-    const btnStyle   = 'background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap';
+
+  let html = '<div class="pinned-notes">';
+
+  if (!isAdmin) {
+    // Non-admin: just show visible items
+    visible.forEach(n => { html += noteRow(n); });
+  } else {
+    // Admin: toggle row + everything inside dropdown
+    const count = pinable.length;
     html += `<div class="pinned-note" style="gap:6px;cursor:pointer;user-select:none" onclick="togglePinDropdown()">
-      <i data-lucide="plus" style="width:13px;height:13px;stroke:var(--muted);flex-shrink:0"></i>
-      <span style="font-size:13px;color:var(--muted);flex:1">Pin something…</span>
+      <i data-lucide="pin" style="width:13px;height:13px;stroke:var(--muted);flex-shrink:0"></i>
+      <span style="font-size:13px;color:var(--muted);flex:1">Pinned${count ? ` (${count})` : ''}…</span>
       <i data-lucide="chevron-down" id="pinDropdownChevron" style="width:13px;height:13px;stroke:var(--muted);flex-shrink:0;transition:transform .2s"></i>
     </div>`;
     html += `<div id="pinDropdown" style="display:none;flex-direction:column">`;
+    pinable.forEach(n => { html += noteRow(n); });
     html += `<div class="pinned-note" id="addNoteRow" style="gap:6px">
       <i data-lucide="pin" style="width:13px;height:13px;stroke:var(--muted);flex-shrink:0"></i>
       <input id="noteInput" type="text" placeholder="Pin a note…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveNote()" />
@@ -1275,6 +1266,7 @@ function renderPinned() {
     </div>`;
     html += `</div>`;
   }
+
   html += '</div>';
   el.innerHTML = html;
   bindNoteDrag(el);
@@ -1777,8 +1769,10 @@ window.saveLink = async () => {
 };
 
 window.deleteNote = async (id) => {
+  const wasLoc = isLocNote(notes.find(n => n.id == id) || {});
   await sb.from('events').delete().eq('id', id);
   await loadEvents();
+  if (wasLoc) { renderMapLocations(); refreshMapMarkers(); }
 };
 
 window.toggleNoteHidden = async (id) => {
@@ -2297,7 +2291,6 @@ function collectMapPoints() {
   // Pinned addresses
   for (const n of notes) {
     if (!isLocNote(n)) continue;
-    if (n.hidden) continue;
     const c = geocodeCache[n.title];
     if (c && c !== false) {
       const dist = currentPosition ? haversineKm(currentPosition.lat, currentPosition.lng, c.lat, c.lng) : null;
@@ -2782,7 +2775,7 @@ function renderMapLocations() {
     if (!locs.length) { list.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px">No custom locations yet.</div>'; return; }
     list.innerHTML = locs.map(n => {
       const label = n.notes || n.title.split(',')[0].trim();
-      return `<div class="map-loc-row${n.hidden ? ' hidden-loc' : ''}" data-id="${n.id}">
+      return `<div class="map-loc-row" data-id="${n.id}">
         <div class="map-loc-icon-wrap">${iconHtml(n.icon || 'map-pin')}</div>
         <div class="map-loc-info">
           <div class="map-loc-name">${escHtml(label)}</div>
@@ -2790,7 +2783,6 @@ function renderMapLocations() {
         </div>
         <div class="map-loc-actions">
           <button class="map-loc-btn" onclick="startEditMapLoc('${n.id}')" title="Edit"><i data-lucide="pencil"></i></button>
-          <button class="map-loc-btn" onclick="toggleNoteHidden('${n.id}')" title="${n.hidden ? 'Show' : 'Hide'}"><i data-lucide="${n.hidden ? 'eye-off' : 'eye'}"></i></button>
           <button class="map-loc-btn" onclick="deleteNote('${n.id}')" title="Delete" style="color:var(--red)"><i data-lucide="trash-2"></i></button>
         </div>
       </div>`;
