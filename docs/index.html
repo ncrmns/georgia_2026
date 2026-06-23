@@ -657,9 +657,8 @@
     /* ── Countdown ── */
     .countdown { font-size: 13px; color: var(--muted); margin-top: 2px; }
     .countdown strong { color: var(--accent); }
-    .geo-status { display: none; font-size: 11px; color: var(--muted); }
+    .geo-status { display: block; font-size: 11px; color: var(--muted); }
     .geo-status.error { color: var(--red); }
-    .is-admin .geo-status { display: block; }
 
     /* ── Card entrance ── */
     @keyframes card-in {
@@ -708,7 +707,6 @@
           <span class="refresh-dot" id="refreshDotInline"></span>
         </div>
         <div class="countdown" id="countdown"></div>
-        <div class="geo-status" id="geoStatus"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="lock-btn" id="copyBtn" title="Copy page URL"><i data-lucide="link"></i></button>
@@ -729,6 +727,7 @@
   <div id="todayPastSection"></div>
   <div id="currentSection"></div>
   <div id="scheduleSection"></div>
+  <div class="geo-status" id="geoStatus" style="padding:8px 0 4px;text-align:center"></div>
 </div>
 
 <!-- Map controls (outside overlay so z-index isn't capped by overlay stacking context) -->
@@ -908,7 +907,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 113;
+const BUILD = 114;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1829,7 +1828,7 @@ window.deleteNote = async (id) => {
 window.toggleNoteHidden = async (id) => {
   const n = notes.find(n => n.id == id);
   if (!n) return;
-  n.hidden = isLocNote(n) ? n.hidden !== false : !n.hidden;
+  n.hidden = isLocNote(n) ? (n.hidden === false) : !n.hidden;
   renderPinned();
   if (isLocNote(n)) { renderMapLocations(); refreshMapMarkers(); }
   lucide.createIcons();
