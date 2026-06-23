@@ -35,15 +35,16 @@
     body { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
 
     /* ── Layout ── */
-    .app { max-width: 480px; margin: 0 auto; padding: 0 16px 100px; }
+    .app { max-width: 480px; margin: 0 auto; padding: var(--header-h, 90px) 16px 100px; }
 
     /* ── Header ── */
     .header-sticky {
-      position: sticky; top: 0; z-index: 100;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 400;
       background: var(--bg); padding: 0 16px;
-      margin: 0 -16px;
+      transition: background .2s;
     }
-    .header { padding: 16px 0 16px; display: flex; flex-direction: column; gap: 4px; }
+    .header-sticky.map-open { background: transparent; }
+    .header { padding: 16px 0 16px; display: flex; flex-direction: column; gap: 4px; max-width: 480px; margin: 0 auto; }
     .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
     .trip-title { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
     .trip-date  { font-size: 14px; color: var(--muted); margin-top: 2px; }
@@ -275,7 +276,7 @@
     .modal-overlay.open { display: flex; }
     /* ── Map overlay ── */
     #mapOverlay {
-      display: none; position: fixed; inset: 0; z-index: 300;
+      display: none; position: fixed; top: var(--header-h, 90px); left: 0; right: 0; bottom: 0; z-index: 300;
       background: #0c0c0e;
     }
     #mapOverlay.open { display: block; }
@@ -295,16 +296,6 @@
     .map-zoom-group .map-zoom-btn + .map-zoom-btn {
       border-top: 1px solid var(--border);
     }
-    .map-trip-header {
-      position: absolute; bottom: 20px; left: 16px; z-index: 10;
-      background: rgba(28,28,30,.45); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
-      padding: 10px 14px; pointer-events: none;
-    }
-    .map-trip-header .trip-title { font-size: 15px; font-weight: 700; color: var(--text); }
-    .map-trip-sub { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
-    .map-trip-header .trip-date { font-size: 12px; color: var(--muted); }
-    .map-trip-header .countdown { font-size: 12px; margin-top: 0; }
     #mapLocationsPanel {
       position: absolute; top: 0; left: 0; bottom: 0; width: 300px; z-index: 10;
       background: transparent; border-right: none;
@@ -687,8 +678,7 @@
 </head>
 <body>
 
-<div class="app" id="app">
-  <div class="header-sticky">
+<div class="header-sticky" id="appHeader">
   <div class="header">
     <div class="header-top">
       <div>
@@ -708,11 +698,12 @@
       </div>
     </div>
   </div>
+</div>
+<div class="app" id="app">
   <div id="pinnedSection"></div>
   <div class="admin-bar" id="adminBar">
     <span><i data-lucide="zap"></i>Admin mode</span>
     <button class="add-btn" id="addEventBtn">+ Add event</button>
-  </div>
   </div>
   <div id="pastSection"></div>
   <div id="todayPastSection"></div>
@@ -722,13 +713,6 @@
 
 <!-- Event editor modal -->
 <div id="mapOverlay">
-  <div class="map-trip-header">
-    <div class="trip-title" id="mapTripTitle"></div>
-    <div class="map-trip-sub">
-      <div class="trip-date" id="mapTripDate"></div>
-      <div class="countdown" id="mapCountdown"></div>
-    </div>
-  </div>
   <div class="map-controls">
     <button class="lock-btn" onclick="toggleMap()" title="Close map"><i data-lucide="x"></i></button>
     <div class="map-zoom-group">
@@ -901,7 +885,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 77;
+const BUILD = 78;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1356,7 +1340,6 @@ function bindNoteDrag(el) {
 
 function renderHeader() {
   document.getElementById('tripTitle').textContent = 'Georgia 2026';
-  document.getElementById('mapTripTitle').textContent = 'Georgia 2026';
   updateDotOnlineState();
 
   const sorted = [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
@@ -1365,7 +1348,6 @@ function renderHeader() {
     const last  = new Date(sorted[sorted.length - 1].start_at);
     const dateStr = `${first.toLocaleDateString([], { month: 'short', day: 'numeric' })} – ${last.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`;
     document.getElementById('tripDate').textContent = dateStr;
-    document.getElementById('mapTripDate').textContent = dateStr;
 
     window._tripFirst = first;
     window._tripLast  = last;
@@ -2294,9 +2276,16 @@ function collectMapPoints() {
 
 window.toggleMap = async (forceOpen = false) => {
   const overlay = document.getElementById('mapOverlay');
+  const header = document.getElementById('appHeader');
+  // Measure and set header height so map overlay starts below it
+  if (header) {
+    const h = header.getBoundingClientRect().height;
+    document.documentElement.style.setProperty('--header-h', h + 'px');
+  }
   // If forcing open and already open, skip re-init entirely
   if (forceOpen && overlay.classList.contains('open')) return;
   const isOpen = forceOpen ? (overlay.classList.add('open'), true) : overlay.classList.toggle('open');
+  header?.classList.toggle('map-open', isOpen);
   document.getElementById('mapBtn')?.classList.toggle('active', isOpen);
   if (isOpen) { updateMapZoomButtons(); }
   if (!isOpen) {
@@ -2550,7 +2539,6 @@ function refreshMapMarkers(adjustViewport = false) {
 // ─────────────────────────────────────────────
 function updateCountdown() {
   const el = document.getElementById('countdown');
-  const mapEl = document.getElementById('mapCountdown');
   if (!el) return;
   const first = window._tripFirst, last = window._tripLast;
   if (!first) return;
@@ -2574,7 +2562,6 @@ function updateCountdown() {
     html = 'Trip completed';
   }
   el.innerHTML = html;
-  if (mapEl) mapEl.innerHTML = html;
 }
 
 function startTick() {
