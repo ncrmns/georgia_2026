@@ -719,6 +719,16 @@
         <div class="countdown" id="countdown"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
+        <div id="nameChipWrap" style="position:relative">
+          <button id="nameChip" onclick="toggleNamePopup(event)" style="display:none;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis"></button>
+          <div id="namePopup" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px;box-shadow:0 4px 16px rgba(0,0,0,.4);z-index:500;min-width:180px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:.04em">YOUR NAME</div>
+            <div style="display:flex;gap:6px">
+              <input id="nameEditInput" type="text" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px;color:var(--text);outline:none;font-family:inherit" />
+              <button onclick="saveNameEdit()" style="background:var(--accent);border:none;color:#000;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer">Save</button>
+            </div>
+          </div>
+        </div>
         <button class="lock-btn" id="copyBtn" title="Copy page URL"><i data-lucide="link"></i></button>
         <button class="lock-btn" id="lockBtn" title="Admin login"><i data-lucide="plus"></i></button>
         <button class="lock-btn" id="navBtn" title="Toggle location" onclick="toggleGlobalLocation()"><i data-lucide="navigation"></i></button>
@@ -918,7 +928,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 129;
+const BUILD = 130;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -3222,6 +3232,50 @@ updateHeaderHeight();
 window.addEventListener('resize', updateHeaderHeight);
 if (localStorage.getItem('locationEnabled') && userName) toggleGlobalLocation();
 if (localStorage.getItem('mapOpen')) toggleMap();
+
+function updateNameChip() {
+  const chip = document.getElementById('nameChip');
+  if (!chip) return;
+  if (userName) { chip.textContent = userName; chip.style.display = ''; }
+  else { chip.style.display = 'none'; }
+}
+
+window.toggleNamePopup = (e) => {
+  e.stopPropagation();
+  const popup = document.getElementById('namePopup');
+  const input = document.getElementById('nameEditInput');
+  const isOpen = popup.style.display !== 'none';
+  if (isOpen) { popup.style.display = 'none'; return; }
+  input.value = userName || '';
+  popup.style.display = 'block';
+  setTimeout(() => { input.focus(); input.select(); }, 50);
+};
+
+window.saveNameEdit = () => {
+  const input = document.getElementById('nameEditInput');
+  const n = input.value.trim();
+  if (!n) return;
+  userName = n;
+  localStorage.setItem('userName', userName);
+  document.getElementById('namePopup').style.display = 'none';
+  updateNameChip();
+  if (!DEMO_MODE) sb.from('user_locations').update({ name: userName }).eq('id', DEVICE_ID);
+};
+
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('nameChipWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const popup = document.getElementById('namePopup');
+    if (popup) popup.style.display = 'none';
+  }
+});
+
+document.getElementById('nameEditInput')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') saveNameEdit();
+  if (e.key === 'Escape') document.getElementById('namePopup').style.display = 'none';
+});
+
+updateNameChip();
 </script>
 </body>
 </html>
