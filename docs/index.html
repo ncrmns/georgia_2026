@@ -902,7 +902,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 96;
+const BUILD = 98;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1208,24 +1208,34 @@ function scrollToNow() {
 
 function renderPinned() {
   const el = document.getElementById('pinnedSection');
-  // isLocNote items live in the map panel, not here
-  const pinable = notes.filter(n => !isLocNote(n));
-  const visible  = pinable.filter(n => !n.hidden);
+  // All notes are pinable; isLocNote items are hidden-by-default (only pinned if n.hidden === false)
+  const pinable = notes;
+  const isPinned = n => isLocNote(n) ? n.hidden === false : !n.hidden;
+  const visible  = pinable.filter(isPinned);
   if (!pinable.length && !isAdmin) { el.innerHTML = ''; return; }
 
   const inputStyle = 'flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit;';
   const btnStyle   = 'background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap';
 
   function noteRow(n) {
-    const drag    = isAdmin ? `<span class="drag-handle"><i data-lucide="grip-vertical"></i></span>` : '';
-    const eyeBtn  = isAdmin ? `<button class="pinned-note-del" onclick="toggleNoteHidden('${n.id}')" title="${n.hidden?'Show':'Hide'}"><i data-lucide="${n.hidden?'eye-off':'eye'}"></i></button>` : '';
-    const delBtn  = isAdmin ? `<button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>` : '';
-    const opacity = n.hidden ? 'opacity:.4;' : '';
+    const pinned  = isPinned(n);
+    const drag    = isAdmin && !isLocNote(n) ? `<span class="drag-handle"><i data-lucide="grip-vertical"></i></span>` : '';
+    const eyeIcon = isLocNote(n) ? (pinned ? 'pin' : 'pin-off') : (pinned ? 'eye' : 'eye-off');
+    const eyeTitle = pinned ? 'Unpin' : 'Pin';
+    const eyeBtn  = isAdmin ? `<button class="pinned-note-del" onclick="toggleNoteHidden('${n.id}')" title="${eyeTitle}"><i data-lucide="${eyeIcon}"></i></button>` : '';
+    const delBtn  = isAdmin && isLocNote(n) ? '' : (isAdmin ? `<button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>` : '');
+    const opacity = !pinned ? 'opacity:.4;' : '';
     if (n.icon === 'link') {
       const label = n.notes || n.title;
       return `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
         ${drag}<a class="pinned-note-address" href="${escHtml(n.title)}" target="_blank" rel="noopener" onclick="if(isAdmin){return false;}">
           <i data-lucide="link"></i>${escHtml(label)}</a>${eyeBtn}${delBtn}</div>`;
+    }
+    if (isLocNote(n)) {
+      const label = n.notes || n.title.split(',')[0].trim();
+      return `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
+        <span style="display:flex;align-items:center;width:13px;height:13px;flex-shrink:0">${iconHtml(n.icon || 'map-pin')}</span>
+        <span class="pinned-note-text" style="font-size:12px">${escHtml(label)}</span>${eyeBtn}</div>`;
     }
     return `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
       ${drag}<i data-lucide="pin" class="pinned-note-icon"></i>
@@ -1235,7 +1245,7 @@ function renderPinned() {
   let html = '<div class="pinned-notes">';
 
   if (!isAdmin) {
-    // Non-admin: just show visible items
+    // Non-admin: just show pinned items
     visible.forEach(n => { html += noteRow(n); });
   } else {
     // Admin: toggle row + everything inside dropdown
