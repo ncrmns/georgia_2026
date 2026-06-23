@@ -908,7 +908,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 106;
+const BUILD = 107;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -998,6 +998,14 @@ async function loadEvents() {
   const all = data || [];
   notes  = all.filter(e => e.type === 'note');
   events = all.filter(e => e.type !== 'note');
+  // Pre-populate geocodeCache from stored coords — no network needed for returning users
+  for (const row of all) {
+    const addr = row.location || (row.type === 'note' ? row.title : null);
+    if (addr && row.lat != null && row.lng != null) {
+      geocodeCache[addr] = { lat: row.lat, lng: row.lng };
+    }
+  }
+  try { localStorage.setItem('geocodeCache', JSON.stringify(geocodeCache)); } catch {}
   render();
 }
 
@@ -2684,6 +2692,22 @@ function formatKm(km) {
   return `${Math.round(km)} km`;
 }
 
+function persistGeocodeToDb(addr, coords) {
+  if (DEMO_MODE) return;
+  // Write lat/lng to any note whose title matches this address
+  const matches = notes.filter(n => n.title === addr && (n.lat == null || n.lng == null));
+  for (const n of matches) {
+    n.lat = coords.lat; n.lng = coords.lng;
+    sb.from('events').update({ lat: coords.lat, lng: coords.lng }).eq('id', n.id);
+  }
+  // Also update events with a matching location field
+  const evMatches = events.filter(e => e.location === addr && (e.lat == null || e.lng == null));
+  for (const e of evMatches) {
+    e.lat = coords.lat; e.lng = coords.lng;
+    sb.from('events').update({ lat: coords.lat, lng: coords.lng }).eq('id', e.id);
+  }
+}
+
 // ── Plus Code (Open Location Code) support ──
 function isPlusCode(s) {
   const t = s.trim().toUpperCase();
@@ -2710,6 +2734,7 @@ async function geocodePlusCode(locationStr) {
     const coords = { lat: area.latitudeCenter, lng: area.longitudeCenter };
     geocodeCache[locationStr] = coords;
     try { localStorage.setItem('geocodeCache', JSON.stringify(geocodeCache)); } catch {}
+    persistGeocodeToDb(locationStr, coords);
     return coords;
   } catch { return null; }
 }
@@ -2725,6 +2750,7 @@ async function geocode(locationStr) {
     const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
     geocodeCache[locationStr] = coords;
     try { localStorage.setItem('geocodeCache', JSON.stringify(geocodeCache)); } catch {}
+    persistGeocodeToDb(locationStr, coords);
     if (locationEnabled) render();
     return coords;
   } catch (e) {
