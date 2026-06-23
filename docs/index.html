@@ -908,7 +908,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 121;
+const BUILD = 122;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1446,14 +1446,15 @@ function renderHeader() {
   const geoEl = document.getElementById('geoStatus');
   if (geoEl) {
     const build = `build ${BUILD}`;
-    if (!locationEnabled) { geoEl.textContent = build; geoEl.className = 'geo-status'; }
-    else if (geoError) { geoEl.textContent = `${build} · 📍 ${geoError}`; geoEl.className = 'geo-status error'; }
-    else if (!currentPosition) { geoEl.textContent = `${build} · 📍 Getting location…`; geoEl.className = 'geo-status'; }
+    const pinSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+    if (!locationEnabled) { geoEl.innerHTML = build; geoEl.className = 'geo-status'; }
+    else if (geoError) { geoEl.innerHTML = `${build} · ${pinSvg}${escHtml(geoError)}`; geoEl.className = 'geo-status error'; }
+    else if (!currentPosition) { geoEl.innerHTML = `${build} · ${pinSvg}Getting location…`; geoEl.className = 'geo-status'; }
     else {
       const cached = Object.values(locationLookup).filter(l => geocodeCache[l] !== undefined).length;
       const total  = Object.values(locationLookup).length;
-      const locStr = cached < total ? `📍 Geocoding ${cached}/${total}…` : `📍 ${currentPosition.lat.toFixed(4)}, ${currentPosition.lng.toFixed(4)}`;
-      geoEl.textContent = `${build} · ${locStr}`;
+      const locStr = cached < total ? `Geocoding ${cached}/${total}…` : `${currentPosition.lat.toFixed(4)}, ${currentPosition.lng.toFixed(4)}`;
+      geoEl.innerHTML = `${build} · ${pinSvg}${locStr}`;
       geoEl.className = 'geo-status';
     }
   }
