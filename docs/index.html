@@ -343,8 +343,15 @@
       display: flex; align-items: center; justify-content: center;
       color: #ff9f0a; cursor: pointer;
       box-shadow: 0 0 0 3px rgba(255,159,10,.2), 0 0 10px rgba(255,159,10,.35);
+      transition: width .2s, height .2s, background .2s, box-shadow .2s;
     }
-    .map-marker-icon svg { width: 13px; height: 13px; stroke: #ff9f0a; }
+    .map-marker-icon svg { width: 13px; height: 13px; stroke: #ff9f0a; transition: opacity .15s; }
+    .map-zoom-far .map-marker-icon {
+      width: 10px; height: 10px;
+      background: #ff9f0a; border: none;
+      box-shadow: 0 0 0 3px rgba(255,159,10,.35);
+    }
+    .map-zoom-far .map-marker-icon svg { opacity: 0; width: 0; height: 0; }
     .loc-icon-picker { display: flex; gap: 6px; flex-wrap: wrap; padding: 4px 0; }
     .loc-icon-opt {
       width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
@@ -859,7 +866,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 62;
+const BUILD = 63;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2304,9 +2311,9 @@ function initMap() {
     attributionControl: false,
   });
   mapInstance.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
-  mapInstance.on('load', () => refreshMapMarkers(!localStorage.getItem('mapView')));
+  mapInstance.on('load', () => { refreshMapMarkers(!localStorage.getItem('mapView')); updateMarkerStyle(); });
   mapInstance.on('move', () => { if (mapInstance.getZoom() >= 13) lastCityCenter = mapInstance.getCenter().toArray(); });
-  mapInstance.on('zoom', () => { updateLocChipVisibility(); updateMapZoomButtons(); });
+  mapInstance.on('zoom', () => { updateLocChipVisibility(); updateMapZoomButtons(); updateMarkerStyle(); });
   mapInstance.on('click', () => { document.querySelectorAll('.map-gm-btn').forEach(b => { b.style.display = 'none'; }); });
 }
 
@@ -2350,6 +2357,11 @@ function timeAgo(iso) {
 const PERSON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
 
 let locChipMarkers = []; // separate from mapMarkers so we can show/hide on zoom
+
+function updateMarkerStyle() {
+  const far = !mapInstance || mapInstance.getZoom() < 10;
+  document.getElementById('mapContainer')?.classList.toggle('map-zoom-far', far);
+}
 
 function updateLocChipVisibility() {
   const visible = mapInstance && mapInstance.getZoom() >= 13;
