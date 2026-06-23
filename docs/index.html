@@ -779,7 +779,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 47;
+const BUILD = 48;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1128,17 +1128,21 @@ function renderPinned() {
       <input id="noteInput" type="text" placeholder="Pin a note…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveNote()" />
       <button onclick="saveNote()" style="${btnStyle}">Add</button>
     </div>`;
-    html += `<div class="pinned-note" style="gap:6px;flex-wrap:wrap">
-      <i data-lucide="map-pin" style="width:13px;height:13px;stroke:var(--accent);flex-shrink:0"></i>
-      <input id="addressInput" type="text" placeholder="Pin an address…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveAddress()" />
-      <input id="addressNameInput" type="text" placeholder="Display name (opt.)" style="width:120px;background:none;border:none;border-left:1px solid var(--border);outline:none;font-size:12px;color:var(--muted);font-family:inherit;padding-left:8px;" onkeydown="if(event.key==='Enter')saveAddress()" />
-      <button onclick="saveAddress()" style="${btnStyle}">Add</button>
+    html += `<div class="pinned-note" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <i data-lucide="map-pin" style="width:13px;height:13px;stroke:var(--accent);flex-shrink:0"></i>
+        <input id="addressInput" type="text" placeholder="Pin an address…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveAddress()" />
+        <input id="addressNameInput" type="text" placeholder="Display name (opt.)" style="width:110px;background:none;border:none;border-left:1px solid var(--border);outline:none;font-size:12px;color:var(--muted);font-family:inherit;padding-left:8px;flex-shrink:0" onkeydown="if(event.key==='Enter')saveAddress()" />
+      </div>
+      <button onclick="saveAddress()" style="${btnStyle};align-self:flex-end">Add</button>
     </div>`;
-    html += `<div class="pinned-note" style="gap:6px;flex-wrap:wrap">
-      <i data-lucide="link" style="width:13px;height:13px;stroke:var(--accent);flex-shrink:0"></i>
-      <input id="linkUrlInput" type="url" placeholder="Pin a link (URL)…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveLink()" />
-      <input id="linkNameInput" type="text" placeholder="Display name" style="width:120px;background:none;border:none;border-left:1px solid var(--border);outline:none;font-size:12px;color:var(--muted);font-family:inherit;padding-left:8px;" onkeydown="if(event.key==='Enter')saveLink()" />
-      <button onclick="saveLink()" style="${btnStyle}">Add</button>
+    html += `<div class="pinned-note" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <i data-lucide="link" style="width:13px;height:13px;stroke:var(--accent);flex-shrink:0"></i>
+        <input id="linkUrlInput" type="url" placeholder="Pin a link (URL)…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveLink()" />
+        <input id="linkNameInput" type="text" placeholder="Display name" style="width:110px;background:none;border:none;border-left:1px solid var(--border);outline:none;font-size:12px;color:var(--muted);font-family:inherit;padding-left:8px;flex-shrink:0" onkeydown="if(event.key==='Enter')saveLink()" />
+      </div>
+      <button onclick="saveLink()" style="${btnStyle};align-self:flex-end">Add</button>
     </div>`;
   }
   html += '</div>';
