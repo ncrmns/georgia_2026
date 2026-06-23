@@ -779,7 +779,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 53;
+const BUILD = 54;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2555,18 +2555,17 @@ window.mapZoomNeighbourhood = () => {
 };
 
 window.flyToAddress = async (locStr) => {
-  const wasOpen = document.getElementById('mapOverlay')?.classList.contains('open');
-  await toggleMap(true);
-  if (!mapInstance) return;
   const cached = geocodeCache[locStr];
   const coords = (cached && cached !== false) ? cached : await geocode(locStr);
   if (!coords) return;
+  await toggleMap(true);
+  if (!mapInstance) return;
   const fly = () => mapInstance.flyTo({ center: [coords.lng, coords.lat], zoom: 17 });
-  // If map was just initialized it won't be loaded yet — wait for it
-  if (!wasOpen && !mapInstance.loaded()) {
-    mapInstance.once('load', fly);
+  if (mapInstance.loaded()) {
+    // Use idle so it runs after any jumpTo/refreshMapMarkers the open flow triggered
+    mapInstance.once('idle', fly);
   } else {
-    fly();
+    mapInstance.once('load', fly);
   }
 };
 
