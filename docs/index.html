@@ -918,7 +918,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 129;
+const BUILD = 131;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2678,10 +2678,30 @@ function refreshMapMarkers(adjustViewport = false) {
     nameChip.textContent = chipLabel;
     el.appendChild(nameChip);
 
-    const popup = new maplibregl.Popup({ offset: 22, closeButton: false, closeOnClick: false })
-      .setHTML(`<strong style="color:${displayColor}">${escHtml(u.name)}${isSelf ? ' <span style="opacity:.5">(you)</span>' : ''}</strong><br><span style="color:var(--muted);font-size:11px">${timeAgo(u.updated_at)}</span>`);
-    el.addEventListener('mouseenter', () => popup.addTo(mapInstance));
-    el.addEventListener('mouseleave', () => popup.remove());
+    const popupHtml = isSelf
+      ? `<div style="min-width:160px">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:.04em">YOUR NAME</div>
+          <div style="display:flex;gap:6px">
+            <input id="mapNameEditInput" value="${escHtml(u.name)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px;color:var(--text);outline:none;font-family:inherit" />
+            <button onclick="saveMapNameEdit()" style="background:var(--accent);border:none;color:#000;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer">Save</button>
+          </div>
+        </div>`
+      : `<strong style="color:${displayColor}">${escHtml(u.name)}</strong><br><span style="color:var(--muted);font-size:11px">${timeAgo(u.updated_at)}</span>`;
+    const popup = new maplibregl.Popup({ offset: 22, closeButton: !isSelf, closeOnClick: false })
+      .setHTML(popupHtml);
+    if (isSelf) {
+      el.addEventListener('click', () => {
+        if (popup._map) { popup.remove(); return; }
+        popup.addTo(mapInstance);
+        setTimeout(() => {
+          const inp = document.getElementById('mapNameEditInput');
+          if (inp) { inp.focus(); inp.select(); }
+        }, 50);
+      });
+    } else {
+      el.addEventListener('mouseenter', () => popup.addTo(mapInstance));
+      el.addEventListener('mouseleave', () => popup.remove());
+    }
 
     new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([u.lng, u.lat]).addTo(mapInstance);
     mapMarkers.push({ remove: () => { el.remove(); popup.remove(); } });
@@ -3109,6 +3129,18 @@ window.toggleMapLocations = () => {
     document.getElementById('mapLocEditBtn')?.classList.remove('active');
     document.getElementById('mapLocAddForm').style.display = 'none';
   }
+};
+
+window.saveMapNameEdit = () => {
+  const inp = document.getElementById('mapNameEditInput');
+  const n = inp?.value.trim();
+  if (!n) return;
+  userName = n;
+  localStorage.setItem('userName', userName);
+  if (!DEMO_MODE) sb.from('user_locations').update({ name: userName }).eq('id', DEVICE_ID);
+  // Close all popups and re-render markers
+  document.querySelectorAll('.maplibregl-popup').forEach(p => p.remove());
+  refreshMapMarkers();
 };
 
 window.flyToAddress = async (locStr) => {
