@@ -776,7 +776,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 37;
+const BUILD = 38;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2151,6 +2151,10 @@ window.toggleMap = async () => {
   document.getElementById('mapBtn')?.classList.toggle('active', isOpen);
   if (isOpen) { updateMapZoomButtons(); }
   if (!isOpen) {
+    if (mapInstance) {
+      const c = mapInstance.getCenter();
+      try { localStorage.setItem('mapView', JSON.stringify({ lng: c.lng, lat: c.lat, zoom: mapInstance.getZoom() })); } catch {}
+    }
     if (mapRealtimeSub) { mapRealtimeSub.unsubscribe(); mapRealtimeSub = null; }
     if (locationEnabled) startGeoWatch(300000);
     return;
@@ -2160,8 +2164,13 @@ window.toggleMap = async () => {
   if (locationEnabled) startGeoWatch(15000);
   lucide.createIcons({ nodes: [overlay] });
   await fetchUserLocations();
-  if (!mapInstance) initMap();
-  else refreshMapMarkers();
+  if (!mapInstance) {
+    initMap();
+  } else {
+    const saved = (() => { try { return JSON.parse(localStorage.getItem('mapView')); } catch { return null; } })();
+    if (saved) mapInstance.jumpTo({ center: [saved.lng, saved.lat], zoom: saved.zoom });
+    refreshMapMarkers();
+  }
   // Realtime subscription for user locations
   if (!DEMO_MODE && !mapRealtimeSub) {
     mapRealtimeSub = sb.channel('user_locations')
@@ -2182,8 +2191,8 @@ function initMap() {
   mapInstance = new maplibregl.Map({
     container: 'mapContainer',
     style: amberMapStyle(),
-    center: [44.8015, 41.6938], // Tbilisi default
-    zoom: 6,
+    center: (() => { try { const v = JSON.parse(localStorage.getItem('mapView')); return v ? [v.lng, v.lat] : [44.8015, 41.6938]; } catch { return [44.8015, 41.6938]; } })(),
+    zoom: (() => { try { const v = JSON.parse(localStorage.getItem('mapView')); return v ? v.zoom : 6; } catch { return 6; } })(),
     attributionControl: false,
   });
   mapInstance.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
