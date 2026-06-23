@@ -337,10 +337,9 @@
     .map-loc-row.editing { flex-direction: column; align-items: stretch; gap: 6px; cursor: default; }
     .map-loc-icon-wrap {
       width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-      background: rgba(255,159,10,.12); border: 1.5px solid #ff9f0a;
-      display: flex; align-items: center; justify-content: center; color: #ff9f0a;
+      display: flex; align-items: center; justify-content: center;
     }
-    .map-loc-icon-wrap svg { width: 14px; height: 14px; stroke: #ff9f0a; }
+    .map-loc-icon-wrap svg { width: 14px; height: 14px; stroke: currentColor; }
     .map-loc-info { flex: 1; min-width: 0; }
     .map-loc-name { font-size: 13px; font-weight: 600; color: var(--text); }
     .map-loc-addr { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
@@ -386,11 +385,10 @@
       box-shadow: 0 0 0 3px rgba(255,159,10,.2), 0 0 10px rgba(255,159,10,.35);
       transition: width .2s, height .2s, background .2s, box-shadow .2s;
     }
-    .map-marker-icon svg { width: 13px; height: 13px; stroke: #ff9f0a; transition: opacity .15s; }
+    .map-marker-icon svg { width: 13px; height: 13px; stroke: currentColor; transition: opacity .15s; }
     .map-zoom-far .map-marker-icon {
       width: 10px; height: 10px;
-      background: #ff9f0a; border: none;
-      box-shadow: 0 0 0 3px rgba(255,159,10,.35);
+      background: currentColor; border: none;
     }
     .map-zoom-far .map-marker-icon svg { opacity: 0; width: 0; height: 0; }
     .loc-icon-picker { display: flex; gap: 6px; flex-wrap: wrap; padding: 4px 0; }
@@ -907,7 +905,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 116;
+const BUILD = 117;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1170,6 +1168,24 @@ const CUSTOM_SVGS = {
 
 const LOC_ICONS = ['wine','landmark','bed-double','mountain','utensils','plane','alien','beach','funicular','cafe','map-pin'];
 const isLocNote = n => LOC_ICONS.includes(n.icon);
+
+const LOC_COLORS = {
+  'wine':      '#c084fc', // purple
+  'landmark':  '#60a5fa', // blue
+  'bed-double':'#34d399', // green
+  'mountain':  '#94a3b8', // slate
+  'utensils':  '#fb923c', // orange
+  'plane':     '#38bdf8', // sky
+  'alien':     '#a3e635', // lime
+  'beach':     '#facc15', // yellow
+  'funicular': '#f472b6', // pink
+  'cafe':      '#d97706', // amber-dark
+  'map-pin':   '#ff9f0a', // default accent
+};
+
+function locColor(icon) {
+  return LOC_COLORS[icon] || '#ff9f0a';
+}
 
 function iconHtml(icon, cssClass = '') {
   if (!icon) return '';
@@ -2506,9 +2522,11 @@ function updateMapZoomButtons() {
 }
 
 function addMarker(lngLat, icon, label, distText, popupHtml, bounds, addr) {
+  const color = locColor(icon);
   // Icon circle marker
   const el = document.createElement('div');
   el.className = 'map-marker-icon';
+  el.style.cssText = `background:${color}22;border-color:${color};color:${color};box-shadow:0 0 0 3px ${color}33,0 0 10px ${color}55`;
   el.innerHTML = iconHtml(icon || 'map-pin');
   const popup = new maplibregl.Popup({ offset: 20, closeButton: false, closeOnClick: false })
     .setHTML(popupHtml);
@@ -2890,7 +2908,7 @@ function renderMapLocations() {
       const distText = dist != null ? formatKm(dist) : '';
       const addr = encodeURIComponent(n.title);
       return `<div class="map-loc-row" data-id="${n.id}" style="cursor:pointer" onclick="if(!event.target.closest('button')){flyToAddress(decodeURIComponent('${addr}'));}">
-        <div class="map-loc-icon-wrap">${iconHtml(n.icon || 'map-pin')}</div>
+        <div class="map-loc-icon-wrap" style="color:${locColor(n.icon||'map-pin')};background:${locColor(n.icon||'map-pin')}22;border:1.5px solid ${locColor(n.icon||'map-pin')}">${iconHtml(n.icon || 'map-pin')}</div>
         <div class="map-loc-info">
           <div class="map-loc-name">${escHtml(label)}</div>
           <div class="map-loc-addr">${escHtml(n.title)}</div>
@@ -2911,7 +2929,7 @@ function renderMapLocations() {
       const distText = pt.dist != null ? formatKm(pt.dist) : '';
       const addr = pt.addr || '';
       return `<div class="map-loc-row" onclick="flyToAddress(decodeURIComponent('${encodeURIComponent(addr || pt.label)}')); toggleMapLocations();">
-        <div class="map-loc-icon-wrap">${iconHtml(pt.icon || 'map-pin')}</div>
+        <div class="map-loc-icon-wrap" style="color:${locColor(pt.icon||'map-pin')};background:${locColor(pt.icon||'map-pin')}22;border:1.5px solid ${locColor(pt.icon||'map-pin')}">${iconHtml(pt.icon || 'map-pin')}</div>
         <div class="map-loc-info">
           <div class="map-loc-name">${escHtml(pt.label)}</div>
           ${addr ? `<div class="map-loc-addr">${escHtml(addr)}</div>` : ''}
