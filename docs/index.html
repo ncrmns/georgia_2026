@@ -908,7 +908,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 111;
+const BUILD = 112;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2376,6 +2376,7 @@ window.toggleMap = async (forceOpen = false) => {
   }
   if (isOpen) { updateMapZoomButtons(); }
   if (!isOpen) {
+    localStorage.removeItem('mapOpen');
     if (mapInstance) {
       const c = mapInstance.getCenter();
       try { localStorage.setItem('mapView', JSON.stringify({ lng: c.lng, lat: c.lat, zoom: mapInstance.getZoom() })); } catch {}
@@ -2384,6 +2385,7 @@ window.toggleMap = async (forceOpen = false) => {
     if (locationEnabled) startGeoWatch(300000);
     return;
   }
+  localStorage.setItem('mapOpen', '1');
   mapFirstOpen = true;
   const hasSavedView = !!localStorage.getItem('mapView');
   mapFlyOnNextFix = !hasSavedView;
@@ -3125,6 +3127,7 @@ function updateHeaderHeight() {
 updateHeaderHeight();
 window.addEventListener('resize', updateHeaderHeight);
 if (localStorage.getItem('locationEnabled') && userName) toggleGlobalLocation();
+if (localStorage.getItem('mapOpen')) toggleMap();
 </script>
 </body>
 </html>
