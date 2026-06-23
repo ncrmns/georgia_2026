@@ -378,17 +378,20 @@
       border-radius: 6px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent-dim); color: var(--accent);
     }
     .map-marker-icon {
+      --mc: #ff9f0a;
       width: 28px; height: 28px; border-radius: 50%;
-      background: rgba(255,159,10,.15); border: 2px solid #ff9f0a;
+      background: color-mix(in srgb, var(--mc) 15%, transparent);
+      border: 2px solid var(--mc);
       display: flex; align-items: center; justify-content: center;
-      color: #ff9f0a; cursor: pointer;
-      box-shadow: 0 0 0 3px rgba(255,159,10,.2), 0 0 10px rgba(255,159,10,.35);
+      color: var(--mc); cursor: pointer;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--mc) 25%, transparent), 0 0 10px color-mix(in srgb, var(--mc) 35%, transparent);
       transition: width .2s, height .2s, background .2s, box-shadow .2s;
     }
-    .map-marker-icon svg { width: 13px; height: 13px; stroke: currentColor; transition: opacity .15s; }
+    .map-marker-icon svg { width: 13px; height: 13px; stroke: var(--mc); transition: opacity .15s; }
     .map-zoom-far .map-marker-icon {
       width: 10px; height: 10px;
-      background: currentColor; border: none;
+      background: var(--mc); border: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--mc) 35%, transparent);
     }
     .map-zoom-far .map-marker-icon svg { opacity: 0; width: 0; height: 0; }
     .loc-icon-picker { display: flex; gap: 6px; flex-wrap: wrap; padding: 4px 0; }
@@ -905,7 +908,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 117;
+const BUILD = 118;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2526,7 +2529,7 @@ function addMarker(lngLat, icon, label, distText, popupHtml, bounds, addr) {
   // Icon circle marker
   const el = document.createElement('div');
   el.className = 'map-marker-icon';
-  el.style.cssText = `background:${color}22;border-color:${color};color:${color};box-shadow:0 0 0 3px ${color}33,0 0 10px ${color}55`;
+  el.style.setProperty('--mc', color);
   el.innerHTML = iconHtml(icon || 'map-pin');
   const popup = new maplibregl.Popup({ offset: 20, closeButton: false, closeOnClick: false })
     .setHTML(popupHtml);
