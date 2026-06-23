@@ -866,7 +866,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 64;
+const BUILD = 65;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2359,7 +2359,7 @@ const PERSON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 let locChipMarkers = []; // separate from mapMarkers so we can show/hide on zoom
 
 function updateMarkerStyle() {
-  const far = !mapInstance || mapInstance.getZoom() < 10;
+  const far = !mapInstance || mapInstance.getZoom() < 15;
   document.getElementById('mapContainer')?.classList.toggle('map-zoom-far', far);
 }
 
