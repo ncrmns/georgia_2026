@@ -775,7 +775,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 33;
+const BUILD = 34;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2041,6 +2041,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
 // ─────────────────────────────────────────────
 let mapInstance = null;
 let mapFirstOpen = true;
+let mapFlyOnNextFix = false;
 
 function amberMapStyle() {
   const i = ['interpolate', ['linear'], ['zoom']];
@@ -2154,6 +2155,7 @@ window.toggleMap = async () => {
     return;
   }
   mapFirstOpen = true;
+  mapFlyOnNextFix = true;
   if (locationEnabled) startGeoWatch(15000);
   lucide.createIcons({ nodes: [overlay] });
   await fetchUserLocations();
@@ -2324,13 +2326,6 @@ function refreshMapMarkers() {
     count++;
   }
 
-  if (mapFirstOpen) {
-    mapFirstOpen = false;
-    if (currentPosition) {
-      mapInstance.flyTo({ center: [currentPosition.lng, currentPosition.lat], zoom: 13 });
-      return;
-    }
-  }
   if (!count) return;
   if (count === 1) {
     const first = [...collectMapPoints(), ...userLocations.map(u => ({ lng: u.lng, lat: u.lat }))][0];
@@ -2466,8 +2461,8 @@ function fetchPosition() {
       if (locationEnabled) {
         pushUserLocation(currentPosition.lat, currentPosition.lng);
         render();
-        if (mapFirstOpen && mapInstance && document.getElementById('mapOverlay')?.classList.contains('open')) {
-          mapFirstOpen = false;
+        if (mapFlyOnNextFix && mapInstance && document.getElementById('mapOverlay')?.classList.contains('open')) {
+          mapFlyOnNextFix = false;
           mapInstance.flyTo({ center: [currentPosition.lng, currentPosition.lat], zoom: 13 });
         }
       }
@@ -2492,6 +2487,7 @@ function startGeoWatch(intervalMs = 300000) {
 
 window.mapNavAction = async () => {
   if (!locationEnabled) {
+    mapFlyOnNextFix = true;
     await window.toggleGlobalLocation();
     return;
   }
