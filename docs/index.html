@@ -594,9 +594,10 @@
         <div class="trip-title" id="tripTitle">Loading…</div>
         <div style="display:flex;align-items:center;gap:8px">
           <div class="trip-date" id="tripDate"></div>
-          <div class="geo-status" id="geoStatus"></div>
+          <span class="refresh-dot" id="refreshDotInline"></span>
         </div>
         <div class="countdown" id="countdown"></div>
+        <div class="geo-status" id="geoStatus"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="lock-btn" id="copyBtn" title="Copy page URL"><i data-lucide="link"></i></button>
@@ -778,7 +779,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 45;
+const BUILD = 46;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1228,8 +1229,7 @@ function bindNoteDrag(el) {
 }
 
 function renderHeader() {
-  document.getElementById('tripTitle').innerHTML =
-    'Georgia 2026 <span class="refresh-dot"></span>';
+  document.getElementById('tripTitle').textContent = 'Georgia 2026';
   updateDotOnlineState();
 
   const sorted = [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
@@ -2616,7 +2616,7 @@ async function initTravelDist(ev) {
 // ─────────────────────────────────────────────
 
 function updateDotOnlineState() {
-  const dot = document.querySelector('.refresh-dot');
+  const dot = document.getElementById('refreshDotInline');
   if (!dot) return;
   if (navigator.onLine) {
     dot.classList.remove('offline');
