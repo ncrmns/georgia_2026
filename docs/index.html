@@ -859,7 +859,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 61;
+const BUILD = 62;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2307,6 +2307,7 @@ function initMap() {
   mapInstance.on('load', () => refreshMapMarkers(!localStorage.getItem('mapView')));
   mapInstance.on('move', () => { if (mapInstance.getZoom() >= 13) lastCityCenter = mapInstance.getCenter().toArray(); });
   mapInstance.on('zoom', () => { updateLocChipVisibility(); updateMapZoomButtons(); });
+  mapInstance.on('click', () => { document.querySelectorAll('.map-gm-btn').forEach(b => { b.style.display = 'none'; }); });
 }
 
 let mapMarkers = [];
@@ -2352,7 +2353,7 @@ let locChipMarkers = []; // separate from mapMarkers so we can show/hide on zoom
 
 function updateLocChipVisibility() {
   const visible = mapInstance && mapInstance.getZoom() >= 13;
-  for (const el of locChipMarkers) el.style.display = visible ? '' : 'none';
+  for (const el of locChipMarkers) el.style.display = visible ? 'flex' : 'none';
 }
 
 function updateMapZoomButtons() {
@@ -2383,11 +2384,30 @@ function addMarker(lngLat, icon, label, distText, popupHtml, bounds) {
 
   // Chip label marker
   const chipText = distText ? `${label} · ${distText}` : label;
+  const chipWrap = document.createElement('div');
+  chipWrap.style.cssText = `display:none;flex-direction:column;align-items:center;gap:4px;pointer-events:auto`;
   const chip = document.createElement('div');
-  chip.style.cssText = `white-space:nowrap;background:var(--surface2);color:var(--accent);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid rgba(255,159,10,.3);pointer-events:none;display:none`;
+  chip.style.cssText = `white-space:nowrap;background:var(--surface2);color:var(--accent);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid rgba(255,159,10,.3);cursor:pointer;user-select:none`;
   chip.textContent = chipText;
-  locChipMarkers.push(chip);
-  const chipMarker = new maplibregl.Marker({ element: chip, anchor: 'bottom', offset: [0, -20] })
+  const gmBtn = document.createElement('a');
+  const gmQuery = encodeURIComponent(label + ' ' + (distText ? '' : ''));
+  gmBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(label)}`;
+  gmBtn.target = '_blank';
+  gmBtn.rel = 'noopener';
+  gmBtn.style.cssText = `display:none;align-items:center;gap:4px;background:#fff;color:#1a73e8;font-size:11px;font-weight:600;padding:3px 8px 3px 5px;border-radius:20px;border:1px solid #dadce0;text-decoration:none;box-shadow:0 1px 4px rgba(0,0,0,.25);white-space:nowrap`;
+  gmBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#EA4335"/><circle cx="12" cy="9" r="2.5" fill="#fff"/></svg>Open in Maps`;
+  chip.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const showing = gmBtn.style.display === 'flex';
+    // dismiss all others
+    document.querySelectorAll('.map-gm-btn').forEach(b => { b.style.display = 'none'; });
+    gmBtn.style.display = showing ? 'none' : 'flex';
+  });
+  gmBtn.className = 'map-gm-btn';
+  chipWrap.appendChild(chip);
+  chipWrap.appendChild(gmBtn);
+  locChipMarkers.push(chipWrap);
+  const chipMarker = new maplibregl.Marker({ element: chipWrap, anchor: 'bottom', offset: [0, -20] })
     .setLngLat(lngLat).addTo(mapInstance);
   mapMarkers.push(chipMarker);
 }
