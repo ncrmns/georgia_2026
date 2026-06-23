@@ -745,7 +745,10 @@
     <div class="map-loc-add" id="mapLocAddForm" style="display:none">
       <div id="mapLocIconPicker"></div>
       <input type="hidden" id="mapLocIcon" value="map-pin" />
-      <input id="mapLocAddr" type="text" placeholder="Address…" />
+      <div style="position:relative">
+        <input id="mapLocAddr" type="text" placeholder="Address…" autocomplete="off" />
+        <div class="loc-suggestions" id="mapLocAddrSuggestions" style="display:none"></div>
+      </div>
       <input id="mapLocName" type="text" placeholder="Display name…" />
       <button onclick="addMapLocation()">Add</button>
     </div>
@@ -902,7 +905,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 100;
+const BUILD = 101;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1882,6 +1885,7 @@ function attachLocAutocompleteEl(input, box) {
 attachLocAutocomplete('fLocation', 'locSuggestions');
 attachLocAutocomplete('fFrom', 'locSuggestionsFrom');
 attachLocAutocomplete('fTo', 'locSuggestionsTo');
+attachLocAutocomplete('mapLocAddr', 'mapLocAddrSuggestions');
 
 function addPoi(address = '', name = '') {
   const row = document.createElement('div');
@@ -2844,13 +2848,17 @@ window.startEditMapLoc = (id) => {
       ${iconPickerHtml(n.icon || 'map-pin', `edit_${id}`)}
       <input type="hidden" id="edit_${id}_icon" value="${n.icon || 'map-pin'}" />
       <input id="editLocName_${id}" value="${escHtml(n.notes || '')}" placeholder="Display name…" />
-      <input id="editLocAddr_${id}" value="${escHtml(n.title)}" placeholder="Address…" />
+      <div style="position:relative">
+        <input id="editLocAddr_${id}" value="${escHtml(n.title)}" placeholder="Address…" autocomplete="off" />
+        <div class="loc-suggestions" id="editLocAddrSuggestions_${id}" style="display:none"></div>
+      </div>
     </div>
     <div class="map-loc-edit-actions">
       <button onclick="renderMapLocations()">Cancel</button>
       <button class="save-btn" onclick="saveEditMapLoc('${id}')">Save</button>
     </div>`;
   lucide.createIcons({ nodes: [row] });
+  attachLocAutocomplete(`editLocAddr_${id}`, `editLocAddrSuggestions_${id}`);
 };
 
 window.saveEditMapLoc = async (id) => {
