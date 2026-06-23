@@ -866,7 +866,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 66;
+const BUILD = 67;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2404,8 +2404,8 @@ function addMarker(lngLat, icon, label, distText, popupHtml, bounds, addr) {
   gmBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr || label)}`;
   gmBtn.target = '_blank';
   gmBtn.rel = 'noopener';
-  gmBtn.style.cssText = `display:none;align-items:center;gap:4px;background:#fff;color:#1a73e8;font-size:11px;font-weight:600;padding:3px 8px 3px 5px;border-radius:20px;border:1px solid #dadce0;text-decoration:none;box-shadow:0 1px 4px rgba(0,0,0,.25);white-space:nowrap`;
-  gmBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#EA4335"/><circle cx="12" cy="9" r="2.5" fill="#fff"/></svg>Open in Maps`;
+  gmBtn.style.cssText = `display:none;align-items:center;gap:4px;background:var(--surface2);color:var(--accent);font-size:11px;font-weight:600;padding:3px 8px 3px 5px;border-radius:20px;border:1px solid rgba(255,159,10,.3);text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.4);white-space:nowrap`;
+  gmBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#ff9f0a"/><circle cx="12" cy="9" r="2.5" fill="var(--surface2)"/></svg>Open in Maps`;
   chip.addEventListener('click', (e) => {
     e.stopPropagation();
     const showing = gmBtn.style.display === 'flex';
