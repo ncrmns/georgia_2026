@@ -770,7 +770,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 24;
+const BUILD = 25;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2169,7 +2169,6 @@ function initMap() {
   });
   mapInstance.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
   mapInstance.on('load', refreshMapMarkers);
-  mapInstance.on('zoom', updateLocationLabelVisibility);
 }
 
 let mapMarkers = [];
@@ -2211,32 +2210,48 @@ function timeAgo(iso) {
 
 const PERSON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
 
-function updateLocationLabelVisibility() {
-  const show = mapInstance.getZoom() >= 13;
-  document.querySelectorAll('.map-loc-label').forEach(l => {
-    l.style.display = show ? 'block' : 'none';
-  });
+function syncLabelLayer(points) {
+  const geojson = {
+    type: 'FeatureCollection',
+    features: points.map(pt => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [pt.lng, pt.lat] },
+      properties: { label: pt.label }
+    }))
+  };
+  if (mapInstance.getSource('loc-labels')) {
+    mapInstance.getSource('loc-labels').setData(geojson);
+  } else {
+    mapInstance.addSource('loc-labels', { type: 'geojson', data: geojson });
+    mapInstance.addLayer({
+      id: 'loc-labels', type: 'symbol', source: 'loc-labels', minzoom: 13,
+      layout: {
+        'text-field': ['get', 'label'],
+        'text-font': ['Open Sans Semibold'],
+        'text-size': 12,
+        'text-offset': [0, -1.2],
+        'text-anchor': 'bottom',
+        'text-allow-overlap': false,
+      },
+      paint: {
+        'text-color': '#ff9f0a',
+        'text-halo-color': '#0c0c0e',
+        'text-halo-width': 1.5,
+      }
+    });
+  }
 }
 
-function addMarker(lngLat, elClass, label, popupHtml, bounds) {
+function addMarker(lngLat, elClass, popupHtml, bounds) {
   const el = document.createElement('div');
   el.className = elClass;
-  el.style.position = 'relative';
-
-  const chip = document.createElement('div');
-  chip.className = 'map-loc-label';
-  chip.textContent = label;
-  chip.style.cssText = 'display:none;position:absolute;bottom:18px;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--surface2);color:var(--accent);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid rgba(255,159,10,.3);pointer-events:none';
-  el.appendChild(chip);
-
   const popup = new maplibregl.Popup({ offset: 16, closeButton: false, closeOnClick: false })
     .setHTML(popupHtml);
   el.addEventListener('mouseenter', () => popup.addTo(mapInstance));
   el.addEventListener('mouseleave', () => popup.remove());
-  const marker = new maplibregl.Marker({ element: el }).setLngLat(lngLat).addTo(mapInstance);
+  const marker = new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat(lngLat).addTo(mapInstance);
   mapMarkers.push(marker);
   bounds.extend(lngLat);
-  updateLocationLabelVisibility();
 }
 
 function refreshMapMarkers() {
@@ -2248,16 +2263,17 @@ function refreshMapMarkers() {
   let count = 0;
 
   // Event & pinned locations
-  for (const pt of collectMapPoints()) {
+  const pts = collectMapPoints();
+  for (const pt of pts) {
     addMarker(
       [pt.lng, pt.lat],
       'map-marker' + (pt.type === 'pin' ? ' pin' : ''),
-      pt.label,
       `<strong style="color:var(--accent)">${escHtml(pt.label)}</strong>${pt.sub ? `<br><span style="color:var(--muted);font-size:11px">${escHtml(pt.sub)}</span>` : ''}`,
       bounds
     );
     count++;
   }
+  syncLabelLayer(pts);
 
   // User presence markers
   for (const u of userLocations) {
