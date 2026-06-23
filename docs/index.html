@@ -908,7 +908,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 107;
+const BUILD = 108;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -981,6 +981,14 @@ document.getElementById('copyBtn').addEventListener('click', async () => {
 // ─────────────────────────────────────────────
 // Data
 // ─────────────────────────────────────────────
+async function loadGeocodeCache() {
+  if (DEMO_MODE) return;
+  const { data } = await sb.from('geocode_cache').select('address,lat,lng');
+  if (!data) return;
+  for (const row of data) geocodeCache[row.address] = { lat: row.lat, lng: row.lng };
+  try { localStorage.setItem('geocodeCache', JSON.stringify(geocodeCache)); } catch {}
+}
+
 async function loadEvents() {
   if (DEMO_MODE) {
     events = demoEvents();
@@ -988,20 +996,20 @@ async function loadEvents() {
     return;
   }
 
-  const { data, error } = await sb
-    .from('events')
-    .select('*')
-    .eq('trip_id', TRIP_ID)
-    .order('start_at', { ascending: true });
+  const [evResult] = await Promise.all([
+    sb.from('events').select('*').eq('trip_id', TRIP_ID).order('start_at', { ascending: true }),
+    loadGeocodeCache(),
+  ]);
 
+  const { data, error } = evResult;
   if (error) { console.error(error); return; }
   const all = data || [];
   notes  = all.filter(e => e.type === 'note');
   events = all.filter(e => e.type !== 'note');
-  // Pre-populate geocodeCache from stored coords — no network needed for returning users
+  // Also pre-populate from lat/lng stored directly on rows (covers primary event.location)
   for (const row of all) {
     const addr = row.location || (row.type === 'note' ? row.title : null);
-    if (addr && row.lat != null && row.lng != null) {
+    if (addr && row.lat != null && row.lng != null && geocodeCache[addr] == null) {
       geocodeCache[addr] = { lat: row.lat, lng: row.lng };
     }
   }
@@ -2694,13 +2702,14 @@ function formatKm(km) {
 
 function persistGeocodeToDb(addr, coords) {
   if (DEMO_MODE) return;
-  // Write lat/lng to any note whose title matches this address
-  const matches = notes.filter(n => n.title === addr && (n.lat == null || n.lng == null));
-  for (const n of matches) {
+  // Shared cache — covers all addresses regardless of source
+  sb.from('geocode_cache').upsert({ address: addr, lat: coords.lat, lng: coords.lng });
+  // Also write onto the event/note row directly for the primary location field
+  const noteMatches = notes.filter(n => n.title === addr && (n.lat == null || n.lng == null));
+  for (const n of noteMatches) {
     n.lat = coords.lat; n.lng = coords.lng;
     sb.from('events').update({ lat: coords.lat, lng: coords.lng }).eq('id', n.id);
   }
-  // Also update events with a matching location field
   const evMatches = events.filter(e => e.location === addr && (e.lat == null || e.lng == null));
   for (const e of evMatches) {
     e.lat = coords.lat; e.lng = coords.lng;
