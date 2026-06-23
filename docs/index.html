@@ -717,17 +717,18 @@
   <div id="scheduleSection"></div>
 </div>
 
+<!-- Map controls (outside overlay so z-index isn't capped by overlay stacking context) -->
+<div class="map-controls" id="mapControls" style="display:none">
+  <div class="map-zoom-group">
+    <button class="lock-btn map-zoom-btn" id="mapNavBtn" onclick="mapNavAction()" title="Street level"><i data-lucide="navigation"></i></button>
+    <button class="lock-btn map-zoom-btn" id="mapLandmarkBtn" onclick="mapZoomNeighbourhood()" title="Neighbourhood view"><i data-lucide="landmark"></i></button>
+    <button class="lock-btn map-zoom-btn" id="mapGlobeBtn" onclick="mapZoomOut()" title="Fit all points"><i data-lucide="globe"></i></button>
+  </div>
+  <button class="lock-btn" id="mapLocBtn" onclick="toggleMapLocations()" title="Map locations"><i data-lucide="list"></i></button>
+  <button class="lock-btn map-admin-only" id="mapLocEditBtn" onclick="toggleMapLocEdit()" title="Edit locations"><i data-lucide="pencil"></i></button>
+</div>
 <!-- Event editor modal -->
 <div id="mapOverlay">
-  <div class="map-controls">
-    <div class="map-zoom-group">
-      <button class="lock-btn map-zoom-btn" id="mapNavBtn" onclick="mapNavAction()" title="Street level"><i data-lucide="navigation"></i></button>
-      <button class="lock-btn map-zoom-btn" id="mapLandmarkBtn" onclick="mapZoomNeighbourhood()" title="Neighbourhood view"><i data-lucide="landmark"></i></button>
-      <button class="lock-btn map-zoom-btn" id="mapGlobeBtn" onclick="mapZoomOut()" title="Fit all points"><i data-lucide="globe"></i></button>
-    </div>
-    <button class="lock-btn" id="mapLocBtn" onclick="toggleMapLocations()" title="Map locations"><i data-lucide="list"></i></button>
-    <button class="lock-btn map-admin-only" id="mapLocEditBtn" onclick="toggleMapLocEdit()" title="Edit locations"><i data-lucide="pencil"></i></button>
-  </div>
   <div id="mapLocationsPanel">
     <div id="mapLocList"></div>
     <div class="map-loc-add" id="mapLocAddForm" style="display:none">
@@ -890,7 +891,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 89;
+const BUILD = 90;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2292,6 +2293,7 @@ window.toggleMap = async (forceOpen = false) => {
   const isOpen = forceOpen ? (overlay.classList.add('open'), true) : overlay.classList.toggle('open');
   header?.classList.toggle('map-open', isOpen);
   document.getElementById('mapBtn')?.classList.toggle('active', isOpen);
+  document.getElementById('mapControls').style.display = isOpen ? '' : 'none';
   if (isOpen) { updateMapZoomButtons(); }
   if (!isOpen) {
     if (mapInstance) {
