@@ -902,7 +902,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 98;
+const BUILD = 99;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2871,7 +2871,7 @@ window.addMapLocation = async () => {
   const name = document.getElementById('mapLocName')?.value.trim();
   const icon = document.getElementById('mapLocIcon')?.value || 'map-pin';
   if (!addr) return;
-  const obj = { trip_id: TRIP_ID, type: 'note', icon, title: addr, notes: name || null, start_at: new Date().toISOString() };
+  const obj = { trip_id: TRIP_ID, type: 'note', icon, title: addr, notes: name || null, hidden: true, start_at: new Date().toISOString() };
   if (!DEMO_MODE) {
     const { data, error } = await sb.from('events').insert(obj).select().single();
     if (error) { alert('Failed: ' + error.message); return; }
