@@ -282,8 +282,9 @@
     #mapOverlay.open { display: block; }
     #mapContainer { width: 100%; height: 100%; }
     .map-controls {
-      position: absolute; top: calc(var(--header-h, 90px) + 12px); right: 16px; z-index: 10;
+      position: absolute; top: var(--header-h, 90px); right: 16px; z-index: 10;
       display: flex; flex-direction: column; gap: 8px; align-items: center;
+      padding-top: 8px;
       animation: map-controls-in .25s ease both;
     }
     @keyframes map-controls-in {
@@ -720,7 +721,6 @@
 <!-- Event editor modal -->
 <div id="mapOverlay">
   <div class="map-controls">
-    <button class="lock-btn" onclick="toggleMap()" title="Close map"><i data-lucide="x"></i></button>
     <div class="map-zoom-group">
       <button class="lock-btn map-zoom-btn" id="mapNavBtn" onclick="mapNavAction()" title="Street level"><i data-lucide="navigation"></i></button>
       <button class="lock-btn map-zoom-btn" id="mapLandmarkBtn" onclick="mapZoomNeighbourhood()" title="Neighbourhood view"><i data-lucide="landmark"></i></button>
@@ -891,7 +891,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 83;
+const BUILD = 84;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
