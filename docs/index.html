@@ -276,13 +276,13 @@
     .modal-overlay.open { display: flex; }
     /* ── Map overlay ── */
     #mapOverlay {
-      display: none; position: fixed; top: var(--header-h, 90px); left: 0; right: 0; bottom: 0; z-index: 300;
+      display: none; position: fixed; inset: 0; z-index: 300;
       background: #0c0c0e;
     }
     #mapOverlay.open { display: block; }
     #mapContainer { width: 100%; height: 100%; }
     .map-controls {
-      position: absolute; top: 16px; right: 16px; z-index: 10;
+      position: absolute; top: calc(var(--header-h, 90px) + 12px); right: 16px; z-index: 10;
       display: flex; flex-direction: column; gap: 8px; align-items: center;
     }
     .map-zoom-group {
@@ -885,7 +885,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 78;
+const BUILD = 79;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
