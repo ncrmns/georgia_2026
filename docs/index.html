@@ -283,6 +283,9 @@
     .map-close {
       position: absolute; top: 16px; right: 16px; z-index: 10;
     }
+    .map-nav-btn {
+      position: absolute; top: 16px; right: 68px; z-index: 10;
+    }
     .map-marker {
       width: 12px; height: 12px; border-radius: 50%;
       background: var(--accent);
@@ -618,6 +621,7 @@
 <!-- Event editor modal -->
 <div id="mapOverlay">
   <button class="lock-btn map-close" onclick="toggleMap()" title="Close map"><i data-lucide="x"></i></button>
+  <button class="lock-btn map-nav-btn" id="mapNavBtn" onclick="toggleGlobalLocation()" title="Toggle location"><i data-lucide="navigation"></i></button>
   <div id="mapContainer"></div>
 </div>
 
@@ -770,7 +774,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 28;
+const BUILD = 29;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2141,6 +2145,7 @@ window.toggleMap = async () => {
   const overlay = document.getElementById('mapOverlay');
   const isOpen = overlay.classList.toggle('open');
   document.getElementById('mapBtn')?.classList.toggle('active', isOpen);
+  if (isOpen) document.getElementById('mapNavBtn')?.classList.toggle('active', !!locationEnabled);
   if (!isOpen) {
     if (mapRealtimeSub) { mapRealtimeSub.unsubscribe(); mapRealtimeSub = null; }
     return;
@@ -2475,6 +2480,7 @@ window.toggleGlobalLocation = async () => {
     geoError = null;
     if (geoWatchId !== null) { clearInterval(geoWatchId); geoWatchId = null; }
     document.getElementById('navBtn')?.classList.remove('active');
+    document.getElementById('mapNavBtn')?.classList.remove('active');
     render();
     return;
   }
@@ -2486,6 +2492,7 @@ window.toggleGlobalLocation = async () => {
   }
   locationEnabled = true;
   document.getElementById('navBtn')?.classList.add('active');
+  document.getElementById('mapNavBtn')?.classList.add('active');
   render(); // populates locationLookup, shows cached distances immediately if position known
   if (!navigator.geolocation) { geoError = 'Geolocation not supported.'; render(); return; }
   geoError = null;
