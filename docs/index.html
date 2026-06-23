@@ -1770,9 +1770,9 @@ window.saveLink = async () => {
 
 window.deleteNote = async (id) => {
   const wasLoc = isLocNote(notes.find(n => n.id == id) || {});
-  await sb.from('events').delete().eq('id', id);
-  await loadEvents();
-  if (wasLoc) { renderMapLocations(); refreshMapMarkers(); }
+  notes = notes.filter(n => n.id != id);
+  if (wasLoc) { renderMapLocations(); refreshMapMarkers(); } else { renderPinned(); lucide.createIcons(); }
+  if (!DEMO_MODE) await sb.from('events').delete().eq('id', id);
 };
 
 window.toggleNoteHidden = async (id) => {
