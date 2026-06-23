@@ -657,7 +657,7 @@
     /* ── Countdown ── */
     .countdown { font-size: 13px; color: var(--muted); margin-top: 2px; }
     .countdown strong { color: var(--accent); }
-    .geo-status { display: block; font-size: 11px; color: var(--muted); }
+    .geo-status { display: block; font-size: 11px; color: var(--muted); background: none; }
     .geo-status.error { color: var(--red); }
 
     /* ── Card entrance ── */
@@ -712,7 +712,7 @@
         <button class="lock-btn" id="copyBtn" title="Copy page URL"><i data-lucide="link"></i></button>
         <button class="lock-btn" id="lockBtn" title="Admin login"><i data-lucide="lock"></i></button>
         <button class="lock-btn" id="navBtn" title="Toggle location" onclick="toggleGlobalLocation()"><i data-lucide="navigation"></i></button>
-        <button class="lock-btn" id="mapBtn" title="Map view" onclick="toggleMap()"><i data-lucide="map"></i></button>
+        <button class="lock-btn" id="mapBtn" title="Map view" onclick="toggleMap()"><i id="mapBtnIcon" data-lucide="map"></i></button>
       </div>
     </div>
   </div>
@@ -720,7 +720,7 @@
 <div class="app" id="app">
   <div id="pinnedSection"></div>
   <div class="admin-bar" id="adminBar">
-    <span><i data-lucide="zap"></i>Admin mode</span>
+    <span><i data-lucide="plus"></i>Admin mode</span>
     <button class="add-btn" id="addEventBtn">+ Add event</button>
   </div>
   <div id="pastSection"></div>
@@ -907,7 +907,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 114;
+const BUILD = 115;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2365,6 +2365,8 @@ window.toggleMap = async (forceOpen = false) => {
   const isOpen = forceOpen ? (overlay.classList.add('open'), true) : overlay.classList.toggle('open');
   header?.classList.toggle('map-open', isOpen);
   document.getElementById('mapBtn')?.classList.toggle('active', isOpen);
+  const mapBtnIcon = document.getElementById('mapBtnIcon');
+  if (mapBtnIcon) { mapBtnIcon.setAttribute('data-lucide', isOpen ? 'x' : 'map'); lucide.createIcons({ nodes: [mapBtnIcon.parentElement] }); }
   const mapControls = document.getElementById('mapControls');
   if (isOpen) {
     mapControls.classList.remove('closing');
