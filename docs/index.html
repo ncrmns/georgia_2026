@@ -908,7 +908,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 112;
+const BUILD = 113;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1244,22 +1244,23 @@ function scrollToNow() {
 
 function renderPinned() {
   const el = document.getElementById('pinnedSection');
-  // All notes are pinable; isLocNote items are hidden-by-default (only pinned if n.hidden === false)
-  const pinable = notes;
-  const isPinned = n => isLocNote(n) ? n.hidden === false : !n.hidden;
+  // isLocNote items are pinned/unpinned from the map locations edit panel
+  const pinable = notes.filter(n => !isLocNote(n));
+  const isPinned = n => !n.hidden;
   const visible  = pinable.filter(isPinned);
   if (!pinable.length && !isAdmin) { el.innerHTML = ''; return; }
+
+  // Also show pinned loc notes for non-admin
+  const pinnedLocs = notes.filter(n => isLocNote(n) && n.hidden === false);
 
   const inputStyle = 'flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit;';
   const btnStyle   = 'background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap';
 
   function noteRow(n) {
     const pinned  = isPinned(n);
-    const drag    = isAdmin && !isLocNote(n) ? `<span class="drag-handle"><i data-lucide="grip-vertical"></i></span>` : '';
-    const eyeIcon = isLocNote(n) ? (pinned ? 'pin' : 'pin-off') : (pinned ? 'eye' : 'eye-off');
-    const eyeTitle = pinned ? 'Unpin' : 'Pin';
-    const eyeBtn  = isAdmin ? `<button class="pinned-note-del" onclick="toggleNoteHidden('${n.id}')" title="${eyeTitle}"><i data-lucide="${eyeIcon}"></i></button>` : '';
-    const delBtn  = isAdmin && isLocNote(n) ? '' : (isAdmin ? `<button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>` : '');
+    const drag    = isAdmin ? `<span class="drag-handle"><i data-lucide="grip-vertical"></i></span>` : '';
+    const eyeBtn  = isAdmin ? `<button class="pinned-note-del" onclick="toggleNoteHidden('${n.id}')" title="${pinned?'Hide':'Show'}"><i data-lucide="${pinned?'eye':'eye-off'}"></i></button>` : '';
+    const delBtn  = isAdmin ? `<button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>` : '';
     const opacity = !pinned ? 'opacity:.4;' : '';
     if (n.icon === 'link') {
       const label = n.notes || n.title;
@@ -1267,22 +1268,25 @@ function renderPinned() {
         ${drag}<a class="pinned-note-address" href="${escHtml(n.title)}" target="_blank" rel="noopener" onclick="if(isAdmin){return false;}">
           <i data-lucide="link"></i>${escHtml(label)}</a>${eyeBtn}${delBtn}</div>`;
     }
-    if (isLocNote(n)) {
-      const label = n.notes || n.title.split(',')[0].trim();
-      return `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
-        <span style="display:flex;align-items:center;width:13px;height:13px;flex-shrink:0">${iconHtml(n.icon || 'map-pin')}</span>
-        <span class="pinned-note-text" style="font-size:12px">${escHtml(label)}</span>${eyeBtn}</div>`;
-    }
     return `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
       ${drag}<i data-lucide="pin" class="pinned-note-icon"></i>
       <span class="pinned-note-text">${escHtml(n.title)}</span>${eyeBtn}${delBtn}</div>`;
   }
 
+  function locNoteRow(n) {
+    const label = n.notes || n.title.split(',')[0].trim();
+    return `<div class="pinned-note">
+      <span style="display:flex;align-items:center;width:13px;height:13px;flex-shrink:0">${iconHtml(n.icon || 'map-pin')}</span>
+      <span class="pinned-note-text" style="font-size:12px">${escHtml(label)}</span>
+    </div>`;
+  }
+
   let html = '<div class="pinned-notes">';
 
   if (!isAdmin) {
-    // Non-admin: just show pinned items
+    // Non-admin: show pinned regular notes + pinned loc notes
     visible.forEach(n => { html += noteRow(n); });
+    pinnedLocs.forEach(n => { html += locNoteRow(n); });
   } else {
     // Admin: toggle row + everything inside dropdown
     const count = pinable.length;
@@ -1825,10 +1829,11 @@ window.deleteNote = async (id) => {
 window.toggleNoteHidden = async (id) => {
   const n = notes.find(n => n.id == id);
   if (!n) return;
-  const hidden = !n.hidden;
-  n.hidden = hidden;
-  renderPinned(); lucide.createIcons();
-  if (!DEMO_MODE) await sb.from('events').update({ hidden }).eq('id', id);
+  n.hidden = isLocNote(n) ? n.hidden !== false : !n.hidden;
+  renderPinned();
+  if (isLocNote(n)) { renderMapLocations(); refreshMapMarkers(); }
+  lucide.createIcons();
+  if (!DEMO_MODE) await sb.from('events').update({ hidden: n.hidden }).eq('id', id);
 };
 
 window.markDone    = (id) => setStatus(id, 'done');
@@ -2887,6 +2892,7 @@ function renderMapLocations() {
         </div>
         ${distText ? `<div class="map-loc-dist">${escHtml(distText)}</div>` : ''}
         <div class="map-loc-actions">
+          <button class="map-loc-btn" onclick="toggleNoteHidden('${n.id}')" title="${n.hidden === false ? 'Unpin' : 'Pin'}" style="${n.hidden === false ? 'color:var(--accent)' : ''}"><i data-lucide="${n.hidden === false ? 'pin' : 'pin-off'}"></i></button>
           <button class="map-loc-btn" onclick="startEditMapLoc('${n.id}')" title="Edit"><i data-lucide="pencil"></i></button>
           <button class="map-loc-btn" onclick="deleteNote('${n.id}')" title="Delete" style="color:var(--red)"><i data-lucide="trash-2"></i></button>
         </div>
