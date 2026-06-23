@@ -346,6 +346,15 @@
     .map-loc-dist { font-size: 11px; font-weight: 600; color: var(--accent); flex-shrink: 0; }
     .map-loc-row.hidden-loc .map-loc-name,
     .map-loc-row.hidden-loc .map-loc-addr { opacity: .4; }
+    .map-loc-category-header {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px 4px;
+      font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      border-top: 1px solid;
+      margin-top: 4px;
+    }
+    .map-loc-category-header:first-child { border-top: none; margin-top: 0; }
+    .map-loc-category-icon svg { width: 12px; height: 12px; stroke: currentColor; display: block; }
     .map-loc-actions { display: flex; gap: 4px; flex-shrink: 0; }
     .map-loc-btn {
       background: none; border: none; cursor: pointer; padding: 4px;
@@ -908,7 +917,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 124;
+const BUILD = 125;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1189,6 +1198,20 @@ const LOC_COLORS = {
 function locColor(icon) {
   return LOC_COLORS[icon] || '#ff9f0a';
 }
+
+const LOC_CATEGORY_LABELS = {
+  'wine':       'Wineries & Bars',
+  'landmark':   'Landmarks',
+  'bed-double': 'Accommodation',
+  'mountain':   'Nature & Hiking',
+  'utensils':   'Restaurants',
+  'plane':      'Transport',
+  'alien':      'Hidden Gems',
+  'beach':      'Beaches',
+  'funicular':  'Funiculars',
+  'cafe':       'Cafés',
+  'map-pin':    'Locations',
+};
 
 function iconHtml(icon, cssClass = '') {
   if (!icon) return '';
@@ -2948,20 +2971,36 @@ function renderMapLocations() {
       </div>`;
     }).join('');
   } else {
-    // Normal mode: all geocoded points sorted by distance
+    // Normal mode: grouped by category, sorted by distance within each group
     const pts = collectMapPoints().slice().sort((a, b) => (a.dist ?? Infinity) - (b.dist ?? Infinity));
     if (!pts.length) { list.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px">No locations.</div>'; return; }
-    list.innerHTML = pts.map(pt => {
-      const distText = pt.dist != null ? formatKm(pt.dist) : '';
-      const addr = pt.addr || '';
-      return `<div class="map-loc-row" onclick="flyToAddress(decodeURIComponent('${encodeURIComponent(addr || pt.label)}')); toggleMapLocations();">
-        <div class="map-loc-icon-wrap" style="color:${locColor(pt.icon||'map-pin')};background:${locColor(pt.icon||'map-pin')}22;border:1.5px solid ${locColor(pt.icon||'map-pin')}">${iconHtml(pt.icon || 'map-pin')}</div>
-        <div class="map-loc-info">
-          <div class="map-loc-name">${escHtml(pt.label)}</div>
-          ${addr ? `<div class="map-loc-addr">${escHtml(addr)}</div>` : ''}
-        </div>
-        ${distText ? `<div class="map-loc-dist">${escHtml(distText)}</div>` : ''}
-      </div>`;
+    // Group preserving LOC_ICONS order
+    const groups = {};
+    for (const pt of pts) {
+      const key = pt.icon || 'map-pin';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(pt);
+    }
+    const orderedKeys = LOC_ICONS.filter(ic => groups[ic]);
+    list.innerHTML = orderedKeys.map(key => {
+      const color = locColor(key);
+      const label = LOC_CATEGORY_LABELS[key] || key;
+      const rows = groups[key].map(pt => {
+        const distText = pt.dist != null ? formatKm(pt.dist) : '';
+        const addr = pt.addr || '';
+        return `<div class="map-loc-row" onclick="flyToAddress(decodeURIComponent('${encodeURIComponent(addr || pt.label)}')); toggleMapLocations();">
+          <div class="map-loc-icon-wrap" style="color:${locColor(pt.icon||'map-pin')};background:${locColor(pt.icon||'map-pin')}22;border:1.5px solid ${locColor(pt.icon||'map-pin')}">${iconHtml(pt.icon || 'map-pin')}</div>
+          <div class="map-loc-info">
+            <div class="map-loc-name">${escHtml(pt.label)}</div>
+            ${addr ? `<div class="map-loc-addr">${escHtml(addr)}</div>` : ''}
+          </div>
+          ${distText ? `<div class="map-loc-dist">${escHtml(distText)}</div>` : ''}
+        </div>`;
+      }).join('');
+      return `<div class="map-loc-category-header" style="color:${color};border-color:${color}22">
+        <span class="map-loc-category-icon" style="color:${color}">${iconHtml(key)}</span>
+        ${escHtml(label)}
+      </div>${rows}`;
     }).join('');
   }
 
