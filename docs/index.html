@@ -280,11 +280,9 @@
     }
     #mapOverlay.open { display: block; }
     #mapContainer { width: 100%; height: 100%; }
-    .map-close {
+    .map-controls {
       position: absolute; top: 16px; right: 16px; z-index: 10;
-    }
-    .map-nav-btn {
-      position: absolute; top: 16px; right: 68px; z-index: 10;
+      display: flex; flex-direction: column; gap: 8px; align-items: center;
     }
     .map-marker {
       width: 12px; height: 12px; border-radius: 50%;
@@ -620,8 +618,11 @@
 
 <!-- Event editor modal -->
 <div id="mapOverlay">
-  <button class="lock-btn map-close" onclick="toggleMap()" title="Close map"><i data-lucide="x"></i></button>
-  <button class="lock-btn map-nav-btn" id="mapNavBtn" onclick="toggleGlobalLocation()" title="Toggle location"><i data-lucide="navigation"></i></button>
+  <div class="map-controls">
+    <button class="lock-btn" onclick="toggleMap()" title="Close map"><i data-lucide="x"></i></button>
+    <button class="lock-btn" id="mapNavBtn" onclick="mapNavAction()" title="Go to my location"><i data-lucide="navigation"></i></button>
+    <button class="lock-btn" onclick="mapZoomOut()" title="City view"><i data-lucide="globe"></i></button>
+  </div>
   <div id="mapContainer"></div>
 </div>
 
@@ -774,7 +775,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 32;
+const BUILD = 33;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2488,6 +2489,22 @@ function startGeoWatch(intervalMs = 300000) {
   fetchPosition();
   geoWatchId = setInterval(fetchPosition, intervalMs);
 }
+
+window.mapNavAction = async () => {
+  if (!locationEnabled) {
+    await window.toggleGlobalLocation();
+    return;
+  }
+  // Already enabled — just fly to current position
+  if (currentPosition && mapInstance) {
+    mapInstance.flyTo({ center: [currentPosition.lng, currentPosition.lat], zoom: 13 });
+  }
+};
+
+window.mapZoomOut = () => {
+  if (!mapInstance) return;
+  mapInstance.flyTo({ zoom: 11, duration: 600 });
+};
 
 window.toggleGlobalLocation = async () => {
   if (locationEnabled) {
