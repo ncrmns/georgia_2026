@@ -302,6 +302,11 @@
     }
     .maplibregl-popup-tip { display: none !important; }
     .maplibregl-ctrl-attrib { font-size: 9px !important; opacity: .4; }
+    @keyframes map-pulse {
+      0%   { transform: scale(1);   opacity: .4; }
+      70%  { transform: scale(2.2); opacity: 0; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
     .modal {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius) var(--radius) 0 0;
@@ -765,7 +770,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 22;
+const BUILD = 23;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2126,14 +2131,27 @@ function collectMapPoints() {
   return points;
 }
 
-window.toggleMap = () => {
+window.toggleMap = async () => {
   const overlay = document.getElementById('mapOverlay');
   const isOpen = overlay.classList.toggle('open');
   document.getElementById('mapBtn')?.classList.toggle('active', isOpen);
-  if (!isOpen) return;
+  if (!isOpen) {
+    if (mapRealtimeSub) { mapRealtimeSub.unsubscribe(); mapRealtimeSub = null; }
+    return;
+  }
   lucide.createIcons({ nodes: [overlay] });
+  await fetchUserLocations();
   if (!mapInstance) initMap();
   else refreshMapMarkers();
+  // Realtime subscription for user locations
+  if (!DEMO_MODE && !mapRealtimeSub) {
+    mapRealtimeSub = sb.channel('user_locations')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_locations' }, async () => {
+        await fetchUserLocations();
+        refreshMapMarkers();
+      })
+      .subscribe();
+  }
 };
 
 function initMap() {
@@ -2154,37 +2172,103 @@ function initMap() {
 }
 
 let mapMarkers = [];
+let userLocations = [];   // [{id, name, lat, lng, updated_at}]
+let mapRealtimeSub = null;
+
+const USER_COLORS = ['#34c759','#64d2ff','#bf5af2','#ff6b6b','#30d158','#0a84ff'];
+function userColor(id) {
+  if (id === DEVICE_ID) return '#ff9f0a';
+  const others = userLocations.filter(u => u.id !== DEVICE_ID).map(u => u.id);
+  const idx = others.indexOf(id);
+  return USER_COLORS[idx % USER_COLORS.length];
+}
+
+async function fetchUserLocations() {
+  if (DEMO_MODE) return;
+  const { data } = await sb.from('user_locations').select('*');
+  if (data) userLocations = data;
+}
+
+async function pushUserLocation(lat, lng) {
+  if (DEMO_MODE || !userName) return;
+  await sb.from('user_locations').upsert({
+    id: DEVICE_ID, name: userName, lat, lng,
+    updated_at: new Date().toISOString(),
+  });
+  if (mapInstance && document.getElementById('mapOverlay')?.classList.contains('open')) {
+    await fetchUserLocations();
+    refreshMapMarkers();
+  }
+}
+
+function timeAgo(iso) {
+  const s = Math.round((Date.now() - new Date(iso)) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  return `${Math.floor(s/3600)}h ago`;
+}
+
+function addMarker(lngLat, elClass, popupHtml, bounds) {
+  const el = document.createElement('div');
+  el.className = elClass;
+  const popup = new maplibregl.Popup({ offset: 16, closeButton: false, closeOnClick: false })
+    .setHTML(popupHtml);
+  el.addEventListener('mouseenter', () => popup.addTo(mapInstance));
+  el.addEventListener('mouseleave', () => popup.remove());
+  const marker = new maplibregl.Marker({ element: el }).setLngLat(lngLat).addTo(mapInstance);
+  mapMarkers.push(marker);
+  bounds.extend(lngLat);
+}
 
 function refreshMapMarkers() {
   if (!mapInstance) return;
   mapMarkers.forEach(m => m.remove());
   mapMarkers = [];
 
-  const points = collectMapPoints();
-  if (!points.length) return;
-
   const bounds = new maplibregl.LngLatBounds();
+  let count = 0;
 
-  for (const pt of points) {
-    const el = document.createElement('div');
-    el.className = 'map-marker' + (pt.type === 'pin' ? ' pin' : '');
-
-    const popup = new maplibregl.Popup({ offset: 14, closeButton: false, closeOnClick: false })
-      .setHTML(`<strong style="color:var(--accent)">${escHtml(pt.label)}</strong>${pt.sub ? `<br><span style="color:var(--muted);font-size:11px">${escHtml(pt.sub)}</span>` : ''}`);
-
-    el.addEventListener('mouseenter', () => popup.addTo(mapInstance));
-    el.addEventListener('mouseleave', () => popup.remove());
-
-    const marker = new maplibregl.Marker({ element: el })
-      .setLngLat([pt.lng, pt.lat])
-      .addTo(mapInstance);
-
-    mapMarkers.push(marker);
-    bounds.extend([pt.lng, pt.lat]);
+  // Event & pinned locations
+  for (const pt of collectMapPoints()) {
+    addMarker(
+      [pt.lng, pt.lat],
+      'map-marker' + (pt.type === 'pin' ? ' pin' : ''),
+      `<strong style="color:var(--accent)">${escHtml(pt.label)}</strong>${pt.sub ? `<br><span style="color:var(--muted);font-size:11px">${escHtml(pt.sub)}</span>` : ''}`,
+      bounds
+    );
+    count++;
   }
 
-  if (points.length === 1) {
-    mapInstance.flyTo({ center: [points[0].lng, points[0].lat], zoom: 13 });
+  // User presence markers
+  for (const u of userLocations) {
+    const color = userColor(u.id);
+    const isSelf = u.id === DEVICE_ID;
+    const el = document.createElement('div');
+    el.className = 'map-user-marker';
+    el.style.cssText = `width:14px;height:14px;border-radius:50%;background:${color};box-shadow:0 0 0 3px ${color}44,0 0 14px ${color}88;border:2px solid ${color};position:relative;cursor:pointer`;
+    if (isSelf) {
+      const pulse = document.createElement('div');
+      pulse.style.cssText = `position:absolute;inset:-6px;border-radius:50%;border:2px solid ${color};opacity:.4;animation:map-pulse 2s ease-out infinite`;
+      el.appendChild(pulse);
+    }
+    const label = document.createElement('div');
+    label.style.cssText = `position:absolute;bottom:18px;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--surface2);color:${color};font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;border:1px solid ${color}44;pointer-events:none`;
+    label.textContent = u.name + (isSelf ? ' (you)' : '');
+    el.appendChild(label);
+    const popup = new maplibregl.Popup({ offset: 18, closeButton: false, closeOnClick: false })
+      .setHTML(`<strong style="color:${color}">${escHtml(u.name)}${isSelf ? ' <span style="opacity:.5">(you)</span>' : ''}</strong><br><span style="color:var(--muted);font-size:11px">${timeAgo(u.updated_at)}</span>`);
+    el.addEventListener('mouseenter', () => popup.addTo(mapInstance));
+    el.addEventListener('mouseleave', () => popup.remove());
+    new maplibregl.Marker({ element: el }).setLngLat([u.lng, u.lat]).addTo(mapInstance);
+    mapMarkers.push({ remove: () => { el.remove(); popup.remove(); } });
+    bounds.extend([u.lng, u.lat]);
+    count++;
+  }
+
+  if (!count) return;
+  if (count === 1) {
+    const first = [...collectMapPoints(), ...userLocations.map(u => ({ lng: u.lng, lat: u.lat }))][0];
+    mapInstance.flyTo({ center: [first.lng, first.lat], zoom: 13 });
   } else {
     mapInstance.fitBounds(bounds, { padding: 60, maxZoom: 14 });
   }
@@ -2258,6 +2342,14 @@ let   geoWatchId         = null;
 let   currentPosition    = null;
 let   geoError           = null;   // error message to show on card
 
+// ── User presence ──
+const DEVICE_ID = (() => {
+  let id = localStorage.getItem('deviceId');
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem('deviceId', id); }
+  return id;
+})();
+let userName = localStorage.getItem('userName') || null;
+
 function haversineKm(lat1, lng1, lat2, lng2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -2305,7 +2397,10 @@ function fetchPosition() {
           if (remKm < 1) { setStatus(ctx.current.id, 'done'); return; }
         }
       }
-      if (locationEnabled) render();
+      if (locationEnabled) {
+        pushUserLocation(currentPosition.lat, currentPosition.lng);
+        render();
+      }
     },
     (err) => {
       geoWatchId = null; currentPosition = null;
@@ -2333,6 +2428,12 @@ window.toggleGlobalLocation = async () => {
     document.getElementById('navBtn')?.classList.remove('active');
     render();
     return;
+  }
+  if (!userName) {
+    const n = prompt('Your name (shown on the map for others):');
+    if (!n?.trim()) return;
+    userName = n.trim();
+    localStorage.setItem('userName', userName);
   }
   locationEnabled = true;
   document.getElementById('navBtn')?.classList.add('active');
