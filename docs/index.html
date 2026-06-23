@@ -918,7 +918,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 135;
+const BUILD = 136;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2699,6 +2699,7 @@ function refreshMapMarkers(adjustViewport = false) {
         if (!DEMO_MODE) sb.from('user_locations').update({ name: userName }).eq('id', DEVICE_ID);
         editPopup.style.display = 'none';
         refreshMapMarkers();
+        setTimeout(() => { if (mapInstance) mapInstance.resize(); }, 300);
       });
       editPopup.querySelector('.map-name-edit-input').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') editPopup.querySelector('.map-name-save-btn').click();
