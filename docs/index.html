@@ -866,7 +866,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 63;
+const BUILD = 64;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2238,7 +2238,7 @@ function collectMapPoints() {
       const c = geocodeCache[loc.address];
       if (c && c !== false) {
         const dist = currentPosition ? haversineKm(currentPosition.lat, currentPosition.lng, c.lat, c.lng) : null;
-        points.push({ lat: c.lat, lng: c.lng, label: loc.name, sub: loc.event, type: 'event', dist, icon: ev.icon || 'map-pin' });
+        points.push({ lat: c.lat, lng: c.lng, label: loc.name, sub: loc.event, type: 'event', dist, icon: ev.icon || 'map-pin', addr: loc.address });
       }
     }
   }
@@ -2249,7 +2249,7 @@ function collectMapPoints() {
     const c = geocodeCache[n.title];
     if (c && c !== false) {
       const dist = currentPosition ? haversineKm(currentPosition.lat, currentPosition.lng, c.lat, c.lng) : null;
-      points.push({ lat: c.lat, lng: c.lng, label: n.notes || n.title.split(',')[0].trim(), sub: null, type: 'pin', dist, icon: n.icon || 'map-pin' });
+      points.push({ lat: c.lat, lng: c.lng, label: n.notes || n.title.split(',')[0].trim(), sub: null, type: 'pin', dist, icon: n.icon || 'map-pin', addr: n.title });
     }
   }
   return points;
@@ -2380,7 +2380,7 @@ function updateMapZoomButtons() {
   document.getElementById('mapGlobeBtn')?.classList.toggle('active', isOverview);
 }
 
-function addMarker(lngLat, icon, label, distText, popupHtml, bounds) {
+function addMarker(lngLat, icon, label, distText, popupHtml, bounds, addr) {
   // Icon circle marker
   const el = document.createElement('div');
   el.className = 'map-marker-icon';
@@ -2402,8 +2402,7 @@ function addMarker(lngLat, icon, label, distText, popupHtml, bounds) {
   chip.style.cssText = `white-space:nowrap;background:var(--surface2);color:var(--accent);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid rgba(255,159,10,.3);cursor:pointer;user-select:none`;
   chip.textContent = chipText;
   const gmBtn = document.createElement('a');
-  const gmQuery = encodeURIComponent(label + ' ' + (distText ? '' : ''));
-  gmBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(label)}`;
+  gmBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr || label)}`;
   gmBtn.target = '_blank';
   gmBtn.rel = 'noopener';
   gmBtn.style.cssText = `display:none;align-items:center;gap:4px;background:#fff;color:#1a73e8;font-size:11px;font-weight:600;padding:3px 8px 3px 5px;border-radius:20px;border:1px solid #dadce0;text-decoration:none;box-shadow:0 1px 4px rgba(0,0,0,.25);white-space:nowrap`;
@@ -2443,7 +2442,8 @@ function refreshMapMarkers(adjustViewport = false) {
       pt.label,
       distText,
       `<strong style="color:var(--accent)">${escHtml(pt.label)}</strong>${pt.sub ? `<br><span style="color:var(--muted);font-size:11px">${escHtml(pt.sub)}</span>` : ''}`,
-      bounds
+      bounds,
+      pt.addr
     );
     count++;
   }
