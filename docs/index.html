@@ -620,8 +620,9 @@
 <div id="mapOverlay">
   <div class="map-controls">
     <button class="lock-btn" onclick="toggleMap()" title="Close map"><i data-lucide="x"></i></button>
-    <button class="lock-btn" id="mapNavBtn" onclick="mapNavAction()" title="Go to my location"><i data-lucide="navigation"></i></button>
-    <button class="lock-btn" onclick="mapZoomOut()" title="City view"><i data-lucide="globe"></i></button>
+    <button class="lock-btn" id="mapNavBtn" onclick="mapNavAction()" title="Street level"><i data-lucide="navigation"></i></button>
+    <button class="lock-btn" onclick="mapZoomNeighbourhood()" title="Neighbourhood view"><i data-lucide="landmark"></i></button>
+    <button class="lock-btn" onclick="mapZoomOut()" title="Fit all points"><i data-lucide="globe"></i></button>
   </div>
   <div id="mapContainer"></div>
 </div>
@@ -775,7 +776,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 34;
+const BUILD = 35;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2463,7 +2464,7 @@ function fetchPosition() {
         render();
         if (mapFlyOnNextFix && mapInstance && document.getElementById('mapOverlay')?.classList.contains('open')) {
           mapFlyOnNextFix = false;
-          mapInstance.flyTo({ center: [currentPosition.lng, currentPosition.lat], zoom: 13 });
+          mapInstance.flyTo({ center: [currentPosition.lng, currentPosition.lat], zoom: 17 });
         }
       }
     },
@@ -2491,15 +2492,32 @@ window.mapNavAction = async () => {
     await window.toggleGlobalLocation();
     return;
   }
-  // Already enabled — just fly to current position
+  // Already enabled — fly to current position at street level
   if (currentPosition && mapInstance) {
-    mapInstance.flyTo({ center: [currentPosition.lng, currentPosition.lat], zoom: 13 });
+    mapInstance.flyTo({ center: [currentPosition.lng, currentPosition.lat], zoom: 17 });
   }
+};
+
+window.mapZoomNeighbourhood = () => {
+  if (!mapInstance) return;
+  const center = currentPosition
+    ? [currentPosition.lng, currentPosition.lat]
+    : mapInstance.getCenter().toArray();
+  mapInstance.flyTo({ center, zoom: 13, duration: 600 });
 };
 
 window.mapZoomOut = () => {
   if (!mapInstance) return;
-  mapInstance.flyTo({ zoom: 11, duration: 600 });
+  const pts = collectMapPoints();
+  const users = userLocations.map(u => [u.lng, u.lat]);
+  const all = [...pts.map(p => [p.lng, p.lat]), ...users];
+  if (all.length < 2) {
+    mapInstance.flyTo({ zoom: 11, duration: 600 });
+    return;
+  }
+  const bounds = new maplibregl.LngLatBounds();
+  all.forEach(c => bounds.extend(c));
+  mapInstance.fitBounds(bounds, { padding: 80, maxZoom: 14, duration: 800 });
 };
 
 window.toggleGlobalLocation = async () => {
