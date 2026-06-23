@@ -8,6 +8,8 @@
   <title>Georgia 2026</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css" rel="stylesheet">
+  <script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
   <style>
     /* ── Reset & base ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -271,6 +273,35 @@
       z-index: 100; padding: 0;
     }
     .modal-overlay.open { display: flex; }
+    /* ── Map overlay ── */
+    #mapOverlay {
+      display: none; position: fixed; inset: 0; z-index: 300;
+      background: #0c0c0e;
+    }
+    #mapOverlay.open { display: block; }
+    #mapContainer { width: 100%; height: 100%; }
+    .map-close {
+      position: absolute; top: 16px; right: 16px; z-index: 10;
+    }
+    .map-marker {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255,159,10,.25), 0 0 12px rgba(255,159,10,.5);
+      cursor: pointer;
+    }
+    .map-marker.pin {
+      width: 10px; height: 10px;
+      background: var(--accent); opacity: .8;
+    }
+    /* Override MapLibre popup to match app theme */
+    .maplibregl-popup-content {
+      background: var(--surface2) !important; color: var(--text) !important;
+      border: 1px solid var(--border) !important; border-radius: 8px !important;
+      padding: 8px 12px !important; font-family: inherit !important;
+      font-size: 13px !important; box-shadow: none !important;
+    }
+    .maplibregl-popup-tip { display: none !important; }
+    .maplibregl-ctrl-attrib { font-size: 9px !important; opacity: .4; }
     .modal {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius) var(--radius) 0 0;
@@ -561,6 +592,7 @@
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="lock-btn" id="copyBtn" title="Copy page URL"><i data-lucide="link"></i></button>
+        <button class="lock-btn" id="mapBtn" title="Map view" onclick="toggleMap()"><i data-lucide="map"></i></button>
         <button class="lock-btn" id="navBtn" title="Toggle location" onclick="toggleGlobalLocation()"><i data-lucide="navigation"></i></button>
         <button class="lock-btn" id="lockBtn" title="Admin login"><i data-lucide="lock"></i></button>
       </div>
@@ -579,6 +611,11 @@
 </div>
 
 <!-- Event editor modal -->
+<div id="mapOverlay">
+  <button class="lock-btn map-close" onclick="toggleMap()" title="Close map"><i data-lucide="x"></i></button>
+  <div id="mapContainer"></div>
+</div>
+
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal" style="position:relative">
     <div class="modal-title" id="modalTitle">Add event</div>
@@ -728,7 +765,8 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 20;
+const BUILD = 21;
+const MAPTILER_KEY = 'YOUR_MAPTILER_KEY';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
 // Demo events — used when Supabase isn't configured yet
@@ -1987,6 +2025,170 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   document.getElementById('saveBtn').disabled = false;
   closeModal();
 });
+
+// ─────────────────────────────────────────────
+// Map view
+// ─────────────────────────────────────────────
+let mapInstance = null;
+
+function amberMapStyle() {
+  const i = ['interpolate', ['linear'], ['zoom']];
+  return {
+    version: 8,
+    sources: {
+      omtiles: {
+        type: 'vector',
+        url: `https://api.maptiler.com/tiles/v3/tiles.json?key=${MAPTILER_KEY}`,
+      }
+    },
+    glyphs: `https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=${MAPTILER_KEY}`,
+    layers: [
+      { id: 'bg',        type: 'background', paint: { 'background-color': '#0c0c0e' }},
+      { id: 'water',     type: 'fill', source: 'omtiles', 'source-layer': 'water',
+        paint: { 'fill-color': '#080810' }},
+      { id: 'landuse',   type: 'fill', source: 'omtiles', 'source-layer': 'landuse',
+        filter: ['in', 'class', 'park', 'forest', 'grass', 'meadow', 'wood'],
+        paint: { 'fill-color': '#111614' }},
+      { id: 'landcover', type: 'fill', source: 'omtiles', 'source-layer': 'landcover',
+        paint: { 'fill-color': '#0f100e', 'fill-opacity': 0.6 }},
+      { id: 'building',  type: 'fill', source: 'omtiles', 'source-layer': 'building',
+        paint: { 'fill-color': '#19191e', 'fill-outline-color': '#111114' }},
+      // Roads — casing (dark outline under road)
+      { id: 'road-case', type: 'line', source: 'omtiles', 'source-layer': 'transportation',
+        filter: ['in', 'class', 'motorway', 'trunk', 'primary', 'secondary'],
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#000', 'line-width': [...i, 8,3, 14,9], 'line-gap-width': 0 }},
+      // Roads — path/service (very dim)
+      { id: 'road-path', type: 'line', source: 'omtiles', 'source-layer': 'transportation',
+        filter: ['in', 'class', 'path', 'service', 'track'],
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': 'rgba(255,159,10,0.15)', 'line-width': [...i, 13,0.5, 17,1.5] }},
+      // Roads — minor/tertiary
+      { id: 'road-minor', type: 'line', source: 'omtiles', 'source-layer': 'transportation',
+        filter: ['in', 'class', 'minor', 'tertiary'],
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': 'rgba(255,159,10,0.32)', 'line-width': [...i, 11,0.8, 15,2.5] }},
+      // Roads — secondary
+      { id: 'road-secondary', type: 'line', source: 'omtiles', 'source-layer': 'transportation',
+        filter: ['==', 'class', 'secondary'],
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': 'rgba(255,159,10,0.55)', 'line-width': [...i, 9,1, 15,4] }},
+      // Roads — primary
+      { id: 'road-primary', type: 'line', source: 'omtiles', 'source-layer': 'transportation',
+        filter: ['==', 'class', 'primary'],
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': 'rgba(255,159,10,0.78)', 'line-width': [...i, 8,1.5, 15,5] }},
+      // Roads — motorway/trunk
+      { id: 'road-motorway', type: 'line', source: 'omtiles', 'source-layer': 'transportation',
+        filter: ['in', 'class', 'motorway', 'trunk'],
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': 'rgba(255,159,10,0.95)', 'line-width': [...i, 7,1.5, 15,6] }},
+      // Admin borders
+      { id: 'boundary', type: 'line', source: 'omtiles', 'source-layer': 'boundary',
+        filter: ['==', 'admin_level', 2],
+        paint: { 'line-color': 'rgba(255,159,10,0.25)', 'line-width': 1, 'line-dasharray': [4, 3] }},
+      // Labels — city/town
+      { id: 'label-city', type: 'symbol', source: 'omtiles', 'source-layer': 'place',
+        filter: ['in', 'class', 'city', 'town'],
+        layout: { 'text-field': ['coalesce', ['get', 'name:en'], ['get', 'name']], 'text-font': ['Open Sans Semibold'], 'text-size': [...i, 8,11, 14,15], 'text-max-width': 8, 'text-anchor': 'center' },
+        paint: { 'text-color': '#f0f0f5', 'text-halo-color': '#0c0c0e', 'text-halo-width': 1.5 }},
+      // Labels — village/suburb
+      { id: 'label-village', type: 'symbol', source: 'omtiles', 'source-layer': 'place',
+        filter: ['in', 'class', 'village', 'suburb', 'neighbourhood'],
+        layout: { 'text-field': ['coalesce', ['get', 'name:en'], ['get', 'name']], 'text-font': ['Open Sans Regular'], 'text-size': [...i, 11,10, 15,13], 'text-max-width': 7 },
+        paint: { 'text-color': 'rgba(240,240,245,0.55)', 'text-halo-color': '#0c0c0e', 'text-halo-width': 1 }},
+    ]
+  };
+}
+
+function collectMapPoints() {
+  const points = [];
+  // Event locations
+  for (const ev of events) {
+    if (ev.type === 'note') continue;
+    const locs = [];
+    if (ev.location) locs.push({ address: ev.location, name: ev.location_name || ev.location.split(',')[0].trim(), event: ev.title });
+    (ev.locations || []).forEach(l => {
+      const { address, name } = parseLoc(l);
+      if (address) locs.push({ address, name: name || address.split(',')[0].trim(), event: ev.title });
+    });
+    for (const loc of locs) {
+      const c = geocodeCache[loc.address];
+      if (c && c !== false) points.push({ lat: c.lat, lng: c.lng, label: loc.name, sub: loc.event, type: 'event' });
+    }
+  }
+  // Pinned addresses
+  for (const n of notes) {
+    if (n.icon !== 'map-pin') continue;
+    const c = geocodeCache[n.title];
+    if (c && c !== false) points.push({ lat: c.lat, lng: c.lng, label: n.notes || n.title.split(',')[0].trim(), sub: null, type: 'pin' });
+  }
+  return points;
+}
+
+window.toggleMap = () => {
+  const overlay = document.getElementById('mapOverlay');
+  const isOpen = overlay.classList.toggle('open');
+  document.getElementById('mapBtn')?.classList.toggle('active', isOpen);
+  if (!isOpen) return;
+  lucide.createIcons({ nodes: [overlay] });
+  if (!mapInstance) initMap();
+  else refreshMapMarkers();
+};
+
+function initMap() {
+  if (MAPTILER_KEY === 'YOUR_MAPTILER_KEY') {
+    document.getElementById('mapContainer').innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:14px;text-align:center;padding:32px">Set <code style="color:var(--accent)">MAPTILER_KEY</code> in index.html to enable the map.<br><small style="opacity:.6;margin-top:8px;display:block">Free key at maptiler.com</small></div>';
+    return;
+  }
+  mapInstance = new maplibregl.Map({
+    container: 'mapContainer',
+    style: amberMapStyle(),
+    center: [44.8015, 41.6938], // Tbilisi default
+    zoom: 6,
+    attributionControl: false,
+  });
+  mapInstance.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
+  mapInstance.on('load', refreshMapMarkers);
+}
+
+let mapMarkers = [];
+
+function refreshMapMarkers() {
+  if (!mapInstance) return;
+  mapMarkers.forEach(m => m.remove());
+  mapMarkers = [];
+
+  const points = collectMapPoints();
+  if (!points.length) return;
+
+  const bounds = new maplibregl.LngLatBounds();
+
+  for (const pt of points) {
+    const el = document.createElement('div');
+    el.className = 'map-marker' + (pt.type === 'pin' ? ' pin' : '');
+
+    const popup = new maplibregl.Popup({ offset: 14, closeButton: false, closeOnClick: false })
+      .setHTML(`<strong style="color:var(--accent)">${escHtml(pt.label)}</strong>${pt.sub ? `<br><span style="color:var(--muted);font-size:11px">${escHtml(pt.sub)}</span>` : ''}`);
+
+    el.addEventListener('mouseenter', () => popup.addTo(mapInstance));
+    el.addEventListener('mouseleave', () => popup.remove());
+
+    const marker = new maplibregl.Marker({ element: el })
+      .setLngLat([pt.lng, pt.lat])
+      .addTo(mapInstance);
+
+    mapMarkers.push(marker);
+    bounds.extend([pt.lng, pt.lat]);
+  }
+
+  if (points.length === 1) {
+    mapInstance.flyTo({ center: [points[0].lng, points[0].lat], zoom: 13 });
+  } else {
+    mapInstance.fitBounds(bounds, { padding: 60, maxZoom: 14 });
+  }
+}
 
 // ─────────────────────────────────────────────
 // Live progress tick
