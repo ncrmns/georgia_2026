@@ -902,7 +902,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 93;
+const BUILD = 94;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1250,6 +1250,12 @@ function renderPinned() {
   if (isAdmin) {
     const inputStyle = 'flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit;';
     const btnStyle   = 'background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap';
+    html += `<div class="pinned-note" style="gap:6px;cursor:pointer;user-select:none" onclick="togglePinDropdown()">
+      <i data-lucide="plus" style="width:13px;height:13px;stroke:var(--muted);flex-shrink:0"></i>
+      <span style="font-size:13px;color:var(--muted);flex:1">Pin something…</span>
+      <i data-lucide="chevron-down" id="pinDropdownChevron" style="width:13px;height:13px;stroke:var(--muted);flex-shrink:0;transition:transform .2s"></i>
+    </div>`;
+    html += `<div id="pinDropdown" style="display:none;flex-direction:column">`;
     html += `<div class="pinned-note" id="addNoteRow" style="gap:6px">
       <i data-lucide="pin" style="width:13px;height:13px;stroke:var(--muted);flex-shrink:0"></i>
       <input id="noteInput" type="text" placeholder="Pin a note…" style="${inputStyle}" onkeydown="if(event.key==='Enter')saveNote()" />
@@ -1267,6 +1273,7 @@ function renderPinned() {
       <input id="linkNameInput" type="text" placeholder="Name" style="width:72px;flex-shrink:0;background:none;border:none;border-left:1px solid var(--border);outline:none;font-size:12px;color:var(--muted);font-family:inherit;padding-left:8px;" onkeydown="if(event.key==='Enter')saveLink()" />
       <button onclick="saveLink()" style="${btnStyle}">Add</button>
     </div>`;
+    html += `</div>`;
   }
   html += '</div>';
   el.innerHTML = html;
@@ -1706,6 +1713,15 @@ function escHtml(str) {
 // ─────────────────────────────────────────────
 // Admin actions (called from inline onclick)
 // ─────────────────────────────────────────────
+window.togglePinDropdown = () => {
+  const dd = document.getElementById('pinDropdown');
+  const ch = document.getElementById('pinDropdownChevron');
+  if (!dd) return;
+  const open = dd.style.display === 'flex';
+  dd.style.display = open ? 'none' : 'flex';
+  if (ch) ch.style.transform = open ? '' : 'rotate(180deg)';
+};
+
 window.saveNote = async () => {
   const input = document.getElementById('noteInput');
   const text = input?.value.trim();
