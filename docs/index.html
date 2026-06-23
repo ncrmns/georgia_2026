@@ -918,7 +918,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 132;
+const BUILD = 133;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2678,29 +2678,42 @@ function refreshMapMarkers(adjustViewport = false) {
     nameChip.textContent = chipLabel;
     el.appendChild(nameChip);
 
-    const popupHtml = isSelf
-      ? `<div style="min-width:160px">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:.04em">YOUR NAME</div>
-          <div style="display:flex;gap:6px">
-            <input id="mapNameEditInput" value="${escHtml(u.name)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px;color:var(--text);outline:none;font-family:inherit" />
-            <button onclick="saveMapNameEdit()" style="background:var(--accent);border:none;color:#000;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer">Save</button>
-          </div>
-        </div>`
-      : `<strong style="color:${displayColor}">${escHtml(u.name)}</strong><br><span style="color:var(--muted);font-size:11px">${timeAgo(u.updated_at)}</span>`;
-    const popup = new maplibregl.Popup({ offset: 22, closeButton: !isSelf, closeOnClick: false })
-      .setHTML(popupHtml);
     if (isSelf) {
+      const editPopup = document.createElement('div');
+      editPopup.style.cssText = `display:none;position:absolute;bottom:42px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px;box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:9999;min-width:170px;pointer-events:auto`;
+      editPopup.innerHTML = `
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:.04em">YOUR NAME</div>
+        <div style="display:flex;gap:6px">
+          <input class="map-name-edit-input" value="${escHtml(u.name)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px;color:var(--text);outline:none;font-family:inherit" />
+          <button class="map-name-save-btn" style="background:var(--accent);border:none;color:#000;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer">Save</button>
+        </div>`;
+      el.appendChild(editPopup);
+      editPopup.querySelector('.map-name-save-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const n = editPopup.querySelector('.map-name-edit-input').value.trim();
+        if (!n) return;
+        userName = n;
+        localStorage.setItem('userName', userName);
+        if (!DEMO_MODE) sb.from('user_locations').update({ name: userName }).eq('id', DEVICE_ID);
+        editPopup.style.display = 'none';
+        refreshMapMarkers();
+      });
+      editPopup.querySelector('.map-name-edit-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') editPopup.querySelector('.map-name-save-btn').click();
+        if (e.key === 'Escape') { e.stopPropagation(); editPopup.style.display = 'none'; }
+      });
       el.addEventListener('click', (e) => {
         e.stopPropagation();
-        const isOpen = popup.isOpen ? popup.isOpen() : !!popup._map;
-        if (isOpen) { popup.remove(); return; }
-        popup.addTo(mapInstance);
-        setTimeout(() => {
-          const inp = document.getElementById('mapNameEditInput');
-          if (inp) { inp.focus(); inp.select(); }
-        }, 50);
+        const showing = editPopup.style.display !== 'none';
+        editPopup.style.display = showing ? 'none' : 'block';
+        if (!showing) {
+          const inp = editPopup.querySelector('.map-name-edit-input');
+          setTimeout(() => { inp.focus(); inp.select(); }, 30);
+        }
       });
     } else {
+      const popup = new maplibregl.Popup({ offset: 22, closeButton: false, closeOnClick: false })
+        .setHTML(`<strong style="color:${displayColor}">${escHtml(u.name)}</strong><br><span style="color:var(--muted);font-size:11px">${timeAgo(u.updated_at)}</span>`);
       el.addEventListener('mouseenter', () => popup.addTo(mapInstance));
       el.addEventListener('mouseleave', () => popup.remove());
     }
