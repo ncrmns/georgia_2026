@@ -621,8 +621,8 @@
   <div class="map-controls">
     <button class="lock-btn" onclick="toggleMap()" title="Close map"><i data-lucide="x"></i></button>
     <button class="lock-btn" id="mapNavBtn" onclick="mapNavAction()" title="Street level"><i data-lucide="navigation"></i></button>
-    <button class="lock-btn" onclick="mapZoomNeighbourhood()" title="Neighbourhood view"><i data-lucide="landmark"></i></button>
-    <button class="lock-btn" onclick="mapZoomOut()" title="Fit all points"><i data-lucide="globe"></i></button>
+    <button class="lock-btn" id="mapLandmarkBtn" onclick="mapZoomNeighbourhood()" title="Neighbourhood view"><i data-lucide="landmark"></i></button>
+    <button class="lock-btn" id="mapGlobeBtn" onclick="mapZoomOut()" title="Fit all points"><i data-lucide="globe"></i></button>
   </div>
   <div id="mapContainer"></div>
 </div>
@@ -776,7 +776,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 35;
+const BUILD = 36;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2149,7 +2149,7 @@ window.toggleMap = async () => {
   const overlay = document.getElementById('mapOverlay');
   const isOpen = overlay.classList.toggle('open');
   document.getElementById('mapBtn')?.classList.toggle('active', isOpen);
-  if (isOpen) document.getElementById('mapNavBtn')?.classList.toggle('active', !!locationEnabled);
+  if (isOpen) { updateMapZoomButtons(); }
   if (!isOpen) {
     if (mapRealtimeSub) { mapRealtimeSub.unsubscribe(); mapRealtimeSub = null; }
     if (locationEnabled) startGeoWatch(300000);
@@ -2188,7 +2188,7 @@ function initMap() {
   });
   mapInstance.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
   mapInstance.on('load', refreshMapMarkers);
-  mapInstance.on('zoom', updateLocChipVisibility);
+  mapInstance.on('zoom', () => { updateLocChipVisibility(); updateMapZoomButtons(); });
 }
 
 let mapMarkers = [];
@@ -2235,6 +2235,18 @@ let locChipMarkers = []; // separate from mapMarkers so we can show/hide on zoom
 function updateLocChipVisibility() {
   const visible = mapInstance && mapInstance.getZoom() >= 13;
   for (const el of locChipMarkers) el.style.display = visible ? '' : 'none';
+}
+
+function updateMapZoomButtons() {
+  if (!mapInstance) return;
+  const z = mapInstance.getZoom();
+  // midpoints: street(17) vs neighbourhood(13) → 15; neighbourhood(13) vs overview → 11
+  const isStreet = z >= 15;
+  const isNeighbourhood = z >= 11 && z < 15;
+  const isOverview = z < 11;
+  document.getElementById('mapNavBtn')?.classList.toggle('active', isStreet);
+  document.getElementById('mapLandmarkBtn')?.classList.toggle('active', isNeighbourhood);
+  document.getElementById('mapGlobeBtn')?.classList.toggle('active', isOverview);
 }
 
 function addMarker(lngLat, elClass, label, distText, popupHtml, bounds) {
