@@ -310,9 +310,8 @@
     }
     #mapLocationsPanel.open { transform: translateX(0); }
     #mapLocationsPanel > * { pointer-events: auto; }
-    .map-loc-edit-fab {
-      position: absolute; bottom: 20px; right: 16px; z-index: 20; pointer-events: auto;
-    }
+    .map-admin-only { display: none; }
+    .is-admin .map-admin-only { display: flex; }
     #mapLocList { flex: 1; overflow-y: auto; padding: 52px 12px 10px; display: flex; flex-direction: column; gap: 8px; direction: rtl; }
     #mapLocList > * { direction: ltr; }
     .map-loc-row {
@@ -727,9 +726,9 @@
       <button class="lock-btn map-zoom-btn" id="mapGlobeBtn" onclick="mapZoomOut()" title="Fit all points"><i data-lucide="globe"></i></button>
     </div>
     <button class="lock-btn" id="mapLocBtn" onclick="toggleMapLocations()" title="Map locations"><i data-lucide="list"></i></button>
+    <button class="lock-btn map-admin-only" id="mapLocEditBtn" onclick="toggleMapLocEdit()" title="Edit locations"><i data-lucide="pencil"></i></button>
   </div>
   <div id="mapLocationsPanel">
-    <div class="map-loc-edit-fab"><button class="lock-btn" id="mapLocEditBtn" onclick="toggleMapLocEdit()" title="Edit locations"><i data-lucide="pencil"></i></button></div>
     <div id="mapLocList"></div>
     <div class="map-loc-add" id="mapLocAddForm" style="display:none">
       <div id="mapLocIconPicker"></div>
@@ -891,7 +890,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 86;
+const BUILD = 87;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
