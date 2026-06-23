@@ -779,7 +779,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 55;
+const BUILD = 56;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2445,7 +2445,7 @@ function startRefresh() {
 // Location tracking
 // ─────────────────────────────────────────────
 
-let   locationEnabled    = false;        // global location tracking toggle
+let   locationEnabled    = false;
 const geocodeCache       = JSON.parse(localStorage.getItem('geocodeCache') || '{}'); // persisted across reloads
 const locationLookup     = {};          // card id -> location string (set during render)
 const travelDistCache    = {};          // ev id -> { totalKm, fromCoords, toCoords } | 'loading' | 'error'
@@ -2587,6 +2587,7 @@ window.mapZoomOut = () => {
 window.toggleGlobalLocation = async () => {
   if (locationEnabled) {
     locationEnabled = false;
+    localStorage.removeItem('locationEnabled');
     geoError = null;
     if (geoWatchId !== null) { clearInterval(geoWatchId); geoWatchId = null; }
     document.getElementById('navBtn')?.classList.remove('active');
@@ -2601,6 +2602,7 @@ window.toggleGlobalLocation = async () => {
     localStorage.setItem('userName', userName);
   }
   locationEnabled = true;
+  localStorage.setItem('locationEnabled', '1');
   document.getElementById('navBtn')?.classList.add('active');
   document.getElementById('mapNavBtn')?.classList.add('active');
   render(); // populates locationLookup, shows cached distances immediately if position known
@@ -2647,6 +2649,7 @@ loadEvents();
 startTick();
 startRefresh();
 lucide.createIcons();
+if (localStorage.getItem('locationEnabled') && userName) toggleGlobalLocation();
 </script>
 </body>
 </html>
