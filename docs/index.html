@@ -307,7 +307,8 @@
     .map-loc-edit-fab {
       position: absolute; bottom: 20px; right: 16px; z-index: 20; pointer-events: auto;
     }
-    #mapLocList { flex: 1; overflow-y: auto; padding: 52px 12px 10px; display: flex; flex-direction: column; gap: 8px; }
+    #mapLocList { flex: 1; overflow-y: auto; padding: 52px 12px 10px; display: flex; flex-direction: column; gap: 8px; direction: rtl; }
+    #mapLocList > * { direction: ltr; }
     .map-loc-row {
       display: flex; align-items: center; gap: 10px;
       background: rgba(28,28,30,.45); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
@@ -885,7 +886,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 79;
+const BUILD = 80;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
