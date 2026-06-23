@@ -905,7 +905,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 103;
+const BUILD = 104;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2791,12 +2791,17 @@ function renderMapLocations() {
     if (!locs.length) { list.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px">No custom locations yet.</div>'; return; }
     list.innerHTML = locs.map(n => {
       const label = n.notes || n.title.split(',')[0].trim();
-      return `<div class="map-loc-row" data-id="${n.id}">
+      const c = geocodeCache[n.title];
+      const dist = (c && c !== false && currentPosition) ? haversineKm(currentPosition.lat, currentPosition.lng, c.lat, c.lng) : null;
+      const distText = dist != null ? formatKm(dist) : '';
+      const addr = encodeURIComponent(n.title);
+      return `<div class="map-loc-row" data-id="${n.id}" style="cursor:pointer" onclick="if(!event.target.closest('button')){flyToAddress(decodeURIComponent('${addr}'));}">
         <div class="map-loc-icon-wrap">${iconHtml(n.icon || 'map-pin')}</div>
         <div class="map-loc-info">
           <div class="map-loc-name">${escHtml(label)}</div>
           <div class="map-loc-addr">${escHtml(n.title)}</div>
         </div>
+        ${distText ? `<div class="map-loc-dist">${escHtml(distText)}</div>` : ''}
         <div class="map-loc-actions">
           <button class="map-loc-btn" onclick="startEditMapLoc('${n.id}')" title="Edit"><i data-lucide="pencil"></i></button>
           <button class="map-loc-btn" onclick="deleteNote('${n.id}')" title="Delete" style="color:var(--red)"><i data-lucide="trash-2"></i></button>
