@@ -770,7 +770,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 26;
+const BUILD = 27;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2276,24 +2276,30 @@ function refreshMapMarkers() {
   for (const u of userLocations) {
     const color = userColor(u.id);
     const isSelf = u.id === DEVICE_ID;
+    const staleMs = Date.now() - new Date(u.updated_at).getTime();
+    const isStale = !isSelf && staleMs > 10 * 60 * 1000;
+    const displayColor = isStale ? '#888' : color;
 
     const el = document.createElement('div');
     el.style.cssText = `position:relative;width:32px;height:32px;cursor:pointer`;
 
     if (isSelf) {
       const pulse = document.createElement('div');
-      pulse.style.cssText = `position:absolute;inset:-6px;border-radius:50%;border:2px solid ${color};opacity:.5;animation:map-pulse 2s ease-out infinite`;
+      pulse.style.cssText = `position:absolute;inset:-6px;border-radius:50%;border:2px solid ${displayColor};opacity:.5;animation:map-pulse 2s ease-out infinite`;
       el.appendChild(pulse);
     }
 
     const avatar = document.createElement('div');
-    avatar.style.cssText = `width:32px;height:32px;border-radius:50%;background:${color}22;border:2px solid ${color};display:flex;align-items:center;justify-content:center;color:${color};box-shadow:0 0 12px ${color}55`;
+    avatar.style.cssText = `width:32px;height:32px;border-radius:50%;background:${displayColor}22;border:2px solid ${displayColor};display:flex;align-items:center;justify-content:center;color:${displayColor};box-shadow:0 0 12px ${displayColor}55`;
     avatar.innerHTML = PERSON_SVG;
     el.appendChild(avatar);
 
     const nameChip = document.createElement('div');
-    nameChip.style.cssText = `position:absolute;bottom:38px;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--surface2);color:${color};font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid ${color}44;pointer-events:none`;
-    nameChip.textContent = u.name + (isSelf ? ' ·you' : '');
+    const chipLabel = isStale
+      ? `${u.name} · ${timeAgo(u.updated_at)}`
+      : u.name + (isSelf ? ' ·you' : '');
+    nameChip.style.cssText = `position:absolute;bottom:38px;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--surface2);color:${displayColor};font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid ${displayColor}44;pointer-events:none`;
+    nameChip.textContent = chipLabel;
     el.appendChild(nameChip);
 
     const popup = new maplibregl.Popup({ offset: 22, closeButton: false, closeOnClick: false })
