@@ -284,6 +284,59 @@
       position: absolute; top: 16px; right: 16px; z-index: 10;
       display: flex; flex-direction: column; gap: 8px; align-items: center;
     }
+    #mapLocationsPanel {
+      position: absolute; top: 0; left: 0; bottom: 0; width: 300px; z-index: 10;
+      background: var(--surface); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; transform: translateX(-100%);
+      transition: transform .25s ease;
+    }
+    #mapLocationsPanel.open { transform: translateX(0); }
+    .map-loc-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px; border-bottom: 1px solid var(--border);
+      font-weight: 600; font-size: 15px; color: var(--text); flex-shrink: 0;
+    }
+    #mapLocList { flex: 1; overflow-y: auto; padding: 8px 0; }
+    .map-loc-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border-bottom: 1px solid var(--border);
+    }
+    .map-loc-row.editing { flex-direction: column; align-items: stretch; gap: 6px; }
+    .map-loc-info { flex: 1; min-width: 0; }
+    .map-loc-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .map-loc-addr { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+    .map-loc-row.hidden-loc .map-loc-name,
+    .map-loc-row.hidden-loc .map-loc-addr { opacity: .4; }
+    .map-loc-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .map-loc-btn {
+      background: none; border: none; cursor: pointer; padding: 4px;
+      color: var(--muted); border-radius: 6px; display: flex; align-items: center;
+    }
+    .map-loc-btn:hover { background: var(--surface2); color: var(--text); }
+    .map-loc-btn svg { width: 14px; height: 14px; }
+    .map-loc-edit-fields { display: flex; flex-direction: column; gap: 4px; }
+    .map-loc-edit-fields input {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+      padding: 5px 8px; font-size: 13px; color: var(--text); font-family: inherit; outline: none; width: 100%; box-sizing: border-box;
+    }
+    .map-loc-edit-fields input:focus { border-color: var(--accent); }
+    .map-loc-edit-actions { display: flex; gap: 6px; justify-content: flex-end; }
+    .map-loc-edit-actions button {
+      font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text);
+    }
+    .map-loc-edit-actions .save-btn { border-color: var(--accent); color: var(--accent); }
+    .map-loc-add {
+      padding: 12px 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+    }
+    .map-loc-add input {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 8px; font-size: 13px; color: var(--text); font-family: inherit; outline: none; width: 100%; box-sizing: border-box;
+    }
+    .map-loc-add input:focus { border-color: var(--accent); }
+    .map-loc-add button {
+      align-self: flex-end; font-size: 12px; font-weight: 600; padding: 4px 14px;
+      border-radius: 6px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent-dim); color: var(--accent);
+    }
     .map-marker {
       width: 12px; height: 12px; border-radius: 50%;
       background: var(--accent);
@@ -626,6 +679,19 @@
     <button class="lock-btn" id="mapNavBtn" onclick="mapNavAction()" title="Street level"><i data-lucide="navigation"></i></button>
     <button class="lock-btn" id="mapLandmarkBtn" onclick="mapZoomNeighbourhood()" title="Neighbourhood view"><i data-lucide="landmark"></i></button>
     <button class="lock-btn" id="mapGlobeBtn" onclick="mapZoomOut()" title="Fit all points"><i data-lucide="globe"></i></button>
+    <button class="lock-btn" id="mapLocBtn" onclick="toggleMapLocations()" title="Manage locations" style="display:none"><i data-lucide="list"></i></button>
+  </div>
+  <div id="mapLocationsPanel">
+    <div class="map-loc-header">
+      <span>Map Locations</span>
+      <button class="lock-btn" onclick="toggleMapLocations()" title="Close"><i data-lucide="x"></i></button>
+    </div>
+    <div id="mapLocList"></div>
+    <div class="map-loc-add">
+      <input id="mapLocAddr" type="text" placeholder="Address…" />
+      <input id="mapLocName" type="text" placeholder="Display name…" />
+      <button onclick="addMapLocation()">Add</button>
+    </div>
   </div>
   <div id="mapContainer"></div>
 </div>
@@ -779,7 +845,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 57;
+const BUILD = 58;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -828,6 +894,8 @@ document.getElementById('lockBtn').addEventListener('click', () => {
     btn.innerHTML = '<i data-lucide="lock"></i>'; lucide.createIcons();
     document.getElementById('adminBar').classList.remove('visible');
     document.body.classList.remove('is-admin');
+    document.getElementById('mapLocBtn').style.display = 'none';
+    document.getElementById('mapLocationsPanel')?.classList.remove('open');
     render();
   } else {
     isAdmin = true;
@@ -835,6 +903,7 @@ document.getElementById('lockBtn').addEventListener('click', () => {
     btn.innerHTML = '<i data-lucide="lock-open"></i>'; lucide.createIcons();
     document.getElementById('adminBar').classList.add('visible');
     document.body.classList.add('is-admin');
+    document.getElementById('mapLocBtn').style.display = '';
     render();
   }
 });
@@ -2557,6 +2626,87 @@ window.mapZoomNeighbourhood = () => {
   } else {
     mapInstance.flyTo({ zoom: 13, duration: 600 });
   }
+};
+
+// ── Map Locations panel ──────────────────────────────
+function renderMapLocations() {
+  const list = document.getElementById('mapLocList');
+  if (!list) return;
+  const locs = notes.filter(n => n.icon === 'map-pin');
+  if (!locs.length) { list.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px">No locations yet.</div>'; return; }
+  list.innerHTML = locs.map(n => {
+    const label = n.notes || n.title.split(',')[0].trim();
+    return `<div class="map-loc-row${n.hidden ? ' hidden-loc' : ''}" data-id="${n.id}">
+      <div class="map-loc-info" onclick="flyToAddress(decodeURIComponent('${encodeURIComponent(n.title)}'))" style="cursor:pointer">
+        <div class="map-loc-name">${escHtml(label)}</div>
+        <div class="map-loc-addr">${escHtml(n.title)}</div>
+      </div>
+      <div class="map-loc-actions">
+        <button class="map-loc-btn" onclick="startEditMapLoc('${n.id}')" title="Edit"><i data-lucide="pencil"></i></button>
+        <button class="map-loc-btn" onclick="toggleNoteHidden('${n.id}')" title="${n.hidden ? 'Show' : 'Hide'}"><i data-lucide="${n.hidden ? 'eye-off' : 'eye'}"></i></button>
+        <button class="map-loc-btn" onclick="deleteNote('${n.id}')" title="Delete" style="color:var(--red)"><i data-lucide="trash-2"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+  lucide.createIcons({ nodes: [list] });
+}
+
+window.startEditMapLoc = (id) => {
+  const n = notes.find(n => n.id == id);
+  if (!n) return;
+  const row = document.querySelector(`.map-loc-row[data-id="${id}"]`);
+  if (!row) return;
+  row.classList.add('editing');
+  row.innerHTML = `
+    <div class="map-loc-edit-fields">
+      <input id="editLocName_${id}" value="${escHtml(n.notes || '')}" placeholder="Display name…" />
+      <input id="editLocAddr_${id}" value="${escHtml(n.title)}" placeholder="Address…" />
+    </div>
+    <div class="map-loc-edit-actions">
+      <button onclick="renderMapLocations()">Cancel</button>
+      <button class="save-btn" onclick="saveEditMapLoc('${id}')">Save</button>
+    </div>`;
+};
+
+window.saveEditMapLoc = async (id) => {
+  const n = notes.find(n => n.id == id);
+  if (!n) return;
+  const name = document.getElementById(`editLocName_${id}`)?.value.trim();
+  const addr = document.getElementById(`editLocAddr_${id}`)?.value.trim();
+  if (!addr) return;
+  n.title = addr; n.notes = name || null;
+  renderMapLocations();
+  refreshMapMarkers();
+  if (!DEMO_MODE) await sb.from('events').update({ title: addr, notes: name || null }).eq('id', id);
+  // Re-geocode if address changed
+  if (geocodeCache[addr] === undefined) { await geocode(addr); refreshMapMarkers(); }
+};
+
+window.addMapLocation = async () => {
+  const addr = document.getElementById('mapLocAddr')?.value.trim();
+  const name = document.getElementById('mapLocName')?.value.trim();
+  if (!addr) return;
+  const obj = { trip_id: TRIP_ID, type: 'note', icon: 'map-pin', title: addr, notes: name || null, start_at: new Date().toISOString() };
+  if (!DEMO_MODE) {
+    const { data, error } = await sb.from('events').insert(obj).select().single();
+    if (error) { alert('Failed: ' + error.message); return; }
+    notes.push(data);
+  } else {
+    notes.push({ ...obj, id: Date.now() });
+  }
+  document.getElementById('mapLocAddr').value = '';
+  document.getElementById('mapLocName').value = '';
+  renderMapLocations();
+  await geocode(addr);
+  refreshMapMarkers();
+};
+
+window.toggleMapLocations = () => {
+  const panel = document.getElementById('mapLocationsPanel');
+  const btn = document.getElementById('mapLocBtn');
+  const isOpen = panel.classList.toggle('open');
+  btn?.classList.toggle('active', isOpen);
+  if (isOpen) renderMapLocations();
 };
 
 window.flyToAddress = async (locStr) => {
