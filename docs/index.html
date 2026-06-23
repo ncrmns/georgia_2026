@@ -776,7 +776,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 42;
+const BUILD = 43;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1077,36 +1077,43 @@ function scrollToNow() {
 
 function renderPinned() {
   const el = document.getElementById('pinnedSection');
-  if (!notes.length && !isAdmin) { el.innerHTML = ''; return; }
+  const visibleNotes = isAdmin ? notes : notes.filter(n => !n.hidden);
+  if (!visibleNotes.length && !isAdmin) { el.innerHTML = ''; return; }
 
   let html = '<div class="pinned-notes">';
   for (const n of notes) {
-    const drag = `<span class="drag-handle"><i data-lucide="grip-vertical"></i></span>`;
+    if (!isAdmin && n.hidden) continue;
+    const drag = isAdmin ? `<span class="drag-handle"><i data-lucide="grip-vertical"></i></span>` : '';
+    const eyeBtn = isAdmin
+      ? `<button class="pinned-note-del" onclick="toggleNoteHidden('${n.id}')" title="${n.hidden ? 'Show' : 'Hide'}"><i data-lucide="${n.hidden ? 'eye-off' : 'eye'}"></i></button>`
+      : '';
+    const delBtn = isAdmin ? `<button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>` : '';
+    const opacity = n.hidden ? 'opacity:.4;' : '';
     if (n.icon === 'link') {
       const label = n.notes || n.title;
-      html += `<div class="pinned-note" data-note-id="${n.id}">
+      html += `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
         ${drag}
         <a class="pinned-note-address" href="${escHtml(n.title)}" target="_blank" rel="noopener" onclick="if(isAdmin){return false;}">
           <i data-lucide="link"></i>${escHtml(label)}
         </a>
-        <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
+        ${eyeBtn}${delBtn}
       </div>`;
     } else if (n.icon === 'map-pin') {
       const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(n.title)}`;
       const label = n.notes || n.title.split(',')[0].trim();
-      html += `<div class="pinned-note" data-note-id="${n.id}">
+      html += `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
         ${drag}
         <a class="pinned-note-address" href="${mapsUrl}" target="_blank" rel="noopener" onclick="if(isAdmin){return false;}">
           <i data-lucide="map-pin"></i>${escHtml(label)}
         </a>
-        <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
+        ${eyeBtn}${delBtn}
       </div>`;
     } else {
-      html += `<div class="pinned-note" data-note-id="${n.id}">
+      html += `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
         ${drag}
         <i data-lucide="pin" class="pinned-note-icon"></i>
         <span class="pinned-note-text">${escHtml(n.title)}</span>
-        <button class="pinned-note-del" onclick="deleteNote('${n.id}')"><i data-lucide="x"></i></button>
+        ${eyeBtn}${delBtn}
       </div>`;
     }
   }
@@ -1628,6 +1635,15 @@ window.saveLink = async () => {
 window.deleteNote = async (id) => {
   await sb.from('events').delete().eq('id', id);
   await loadEvents();
+};
+
+window.toggleNoteHidden = async (id) => {
+  const n = notes.find(n => n.id == id);
+  if (!n) return;
+  const hidden = !n.hidden;
+  n.hidden = hidden;
+  renderPinned(); lucide.createIcons();
+  if (!DEMO_MODE) await sb.from('events').update({ hidden }).eq('id', id);
 };
 
 window.markDone    = (id) => setStatus(id, 'done');
