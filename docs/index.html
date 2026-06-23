@@ -917,7 +917,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 127;
+const BUILD = 128;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1320,7 +1320,7 @@ function renderPinned() {
   function locNoteRow(n) {
     const label = n.notes || n.title.split(',')[0].trim();
     const addr = encodeURIComponent(n.title);
-    return `<div class="pinned-note" style="cursor:pointer" onclick="toggleMap(true);flyToAddress(decodeURIComponent('${addr}'));">
+    return `<div class="pinned-note" style="cursor:pointer" onclick="flyToAddress(decodeURIComponent('${addr}'));">
       <span style="display:flex;align-items:center;width:13px;height:13px;flex-shrink:0">${iconHtml(n.icon || 'map-pin')}</span>
       <span class="pinned-note-text" style="font-size:12px">${escHtml(label)}</span>
     </div>`;
