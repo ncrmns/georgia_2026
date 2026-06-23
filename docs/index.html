@@ -908,7 +908,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 119;
+const BUILD = 120;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1317,7 +1317,9 @@ function renderPinned() {
       <span style="font-size:13px;color:var(--muted);flex:1">Pinned${count ? ` (${count})` : ''}…</span>
       <i data-lucide="chevron-down" id="pinDropdownChevron" style="width:13px;height:13px;stroke:var(--muted);flex-shrink:0;transition:transform .2s"></i>
     </div>`;
-    html += `<div id="pinDropdown" style="display:none;flex-direction:column">`;
+    const pinOpen = !!localStorage.getItem('pinDropdownOpen');
+    html += `<div id="pinDropdown" style="display:${pinOpen?'flex':'none'};flex-direction:column">`;
+    if (pinOpen) { /* update chevron after render */ setTimeout(() => { const ch = document.getElementById('pinDropdownChevron'); if (ch) ch.style.transform = 'rotate(180deg)'; }, 0); }
     pinable.forEach(n => { html += noteRow(n); });
     html += `<div class="pinned-note" id="addNoteRow" style="gap:6px">
       <i data-lucide="pin" style="width:13px;height:13px;stroke:var(--muted);flex-shrink:0"></i>
@@ -1479,10 +1481,12 @@ function groupByDay(evList) {
 }
 
 function dayBandHtml(day, dayEvents, collapsed, dayIdx) {
+  const stored = isDayCollapsed(day);
+  if (stored !== null) collapsed = stored;
   const bandClass = `day-band-${Math.min(dayIdx, 3)}`;
   const collClass = collapsed ? ' collapsed' : '';
   let html = `<div class="${bandClass}">`;
-  html += `<div class="day-header collapsible${collClass}" onclick="toggleDay(this)">
+  html += `<div class="day-header collapsible${collClass}" data-day="${day}" onclick="toggleDay(this)">
     ${day}
     <span class="day-chevron"><i data-lucide="chevron-down"></i></span>
   </div>`;
@@ -1768,7 +1772,19 @@ function bindCardActions(el) {
 window.toggleDay = (header) => {
   header.classList.toggle('collapsed');
   header.nextElementSibling.classList.toggle('collapsed');
+  const day = header.dataset.day;
+  if (day) {
+    const collapsed = header.classList.contains('collapsed');
+    const stored = JSON.parse(localStorage.getItem('dayCollapsed') || '{}');
+    stored[day] = collapsed;
+    try { localStorage.setItem('dayCollapsed', JSON.stringify(stored)); } catch {}
+  }
 };
+
+function isDayCollapsed(day) {
+  const stored = JSON.parse(localStorage.getItem('dayCollapsed') || '{}');
+  return stored[day] ?? null; // null = use default
+}
 
 function escHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1784,6 +1800,7 @@ window.togglePinDropdown = () => {
   const open = dd.style.display === 'flex';
   dd.style.display = open ? 'none' : 'flex';
   if (ch) ch.style.transform = open ? '' : 'rotate(180deg)';
+  try { localStorage.setItem('pinDropdownOpen', open ? '' : '1'); } catch {}
 };
 
 window.saveNote = async () => {
