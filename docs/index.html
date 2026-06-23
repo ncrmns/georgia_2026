@@ -878,7 +878,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 70;
+const BUILD = 71;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2421,9 +2421,11 @@ function addMarker(lngLat, icon, label, distText, popupHtml, bounds, addr) {
   chip.addEventListener('click', (e) => {
     e.stopPropagation();
     const showing = gmBtn.style.display === 'flex';
-    // dismiss all others
     document.querySelectorAll('.map-gm-btn').forEach(b => { b.style.display = 'none'; });
+    // reset z-index on all chip marker wrappers
+    locChipMarkers.forEach(w => { if (w.parentElement) w.parentElement.style.zIndex = ''; });
     gmBtn.style.display = showing ? 'none' : 'flex';
+    if (!showing) chipWrap.parentElement && (chipWrap.parentElement.style.zIndex = '9999');
   });
   gmBtn.className = 'map-gm-btn';
   chipWrap.appendChild(chip);
