@@ -285,10 +285,15 @@
       position: fixed; top: var(--map-controls-top, 90px); right: var(--map-controls-right, 16px); z-index: 450;
       display: flex; flex-direction: column; gap: 8px; align-items: center;
       width: var(--map-controls-width, 36px); padding-top: 6px;
-      animation: map-controls-in .25s ease both;
     }
-    @keyframes map-controls-in {
-      from { opacity: 0; transform: translateY(-12px); }
+    .map-controls > * {
+      animation: map-btn-in .35s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .map-controls > *:nth-child(1) { animation-delay: 0ms; }
+    .map-controls > *:nth-child(2) { animation-delay: 60ms; }
+    .map-controls > *:nth-child(3) { animation-delay: 110ms; }
+    @keyframes map-btn-in {
+      from { opacity: 0; transform: translateY(calc(-1 * (var(--map-controls-top, 90px)))); }
       to   { opacity: 1; transform: translateY(0); }
     }
     .map-zoom-group {
@@ -891,7 +896,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 91;
+const BUILD = 92;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
