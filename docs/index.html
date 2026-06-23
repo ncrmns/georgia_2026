@@ -891,7 +891,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 90;
+const BUILD = 91;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2838,8 +2838,8 @@ window.addMapLocation = async () => {
   // Reset picker to map-pin
   document.querySelectorAll('#mapLocationsPanel .map-loc-add .loc-icon-opt').forEach(o => o.classList.toggle('selected', o.dataset.icon === 'map-pin'));
   document.getElementById('mapLocIcon').value = 'map-pin';
-  renderMapLocations();
   await geocode(addr);
+  renderMapLocations();
   refreshMapMarkers();
 };
 
