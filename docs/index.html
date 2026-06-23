@@ -779,7 +779,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 50;
+const BUILD = 51;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1105,7 +1105,7 @@ function renderPinned() {
       const label = n.notes || n.title.split(',')[0].trim();
       html += `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
         ${drag}
-        <a class="pinned-note-address" href="#" onclick="if(!isAdmin){flyToAddress(${JSON.stringify(n.title)});}return false;">
+        <a class="pinned-note-address" href="#" onclick="if(!isAdmin){flyToAddress(decodeURIComponent('${encodeURIComponent(n.title)}'));}return false;">
           <i data-lucide="map-pin"></i>${escHtml(label)}
         </a>
         ${eyeBtn}${delBtn}
@@ -1501,7 +1501,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
       distHtml = `<span class="loc-distance">${formatKm(km)}</span>`;
     }
     return `<div class="card-location-row">
-      <a class="card-location" href="#" onclick="flyToAddress(${JSON.stringify(locStr)});return false;"><i data-lucide="map-pin"></i>${escHtml(label)}</a>
+      <a class="card-location" href="#" onclick="flyToAddress(decodeURIComponent('${encodeURIComponent(locStr)}'));return false;"><i data-lucide="map-pin"></i>${escHtml(label)}</a>
       ${distHtml}
     </div>`;
   }
@@ -2553,16 +2553,17 @@ window.mapZoomNeighbourhood = () => {
 };
 
 window.flyToAddress = async (locStr) => {
-  const cached = geocodeCache[locStr];
-  const coords = (cached && cached !== false) ? cached : null;
-  await toggleMap(true); // open map if not open
+  await toggleMap(true);
+  const doFly = async () => {
+    const cached = geocodeCache[locStr];
+    const coords = (cached && cached !== false) ? cached : await geocode(locStr);
+    if (coords && mapInstance) mapInstance.flyTo({ center: [coords.lng, coords.lat], zoom: 17 });
+  };
   if (!mapInstance) return;
-  if (coords) {
-    mapInstance.flyTo({ center: [coords.lng, coords.lat], zoom: 17 });
+  if (mapInstance.loaded()) {
+    await doFly();
   } else {
-    // geocode on demand then fly
-    const result = await geocode(locStr);
-    if (result) mapInstance.flyTo({ center: [result.lng, result.lat], zoom: 17 });
+    mapInstance.once('load', doFly);
   }
 };
 
