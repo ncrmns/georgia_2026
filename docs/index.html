@@ -770,7 +770,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 23;
+const BUILD = 24;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2169,6 +2169,7 @@ function initMap() {
   });
   mapInstance.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
   mapInstance.on('load', refreshMapMarkers);
+  mapInstance.on('zoom', updateLocationLabelVisibility);
 }
 
 let mapMarkers = [];
@@ -2208,9 +2209,26 @@ function timeAgo(iso) {
   return `${Math.floor(s/3600)}h ago`;
 }
 
-function addMarker(lngLat, elClass, popupHtml, bounds) {
+const PERSON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+
+function updateLocationLabelVisibility() {
+  const show = mapInstance.getZoom() >= 13;
+  document.querySelectorAll('.map-loc-label').forEach(l => {
+    l.style.display = show ? 'block' : 'none';
+  });
+}
+
+function addMarker(lngLat, elClass, label, popupHtml, bounds) {
   const el = document.createElement('div');
   el.className = elClass;
+  el.style.position = 'relative';
+
+  const chip = document.createElement('div');
+  chip.className = 'map-loc-label';
+  chip.textContent = label;
+  chip.style.cssText = 'display:none;position:absolute;bottom:18px;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--surface2);color:var(--accent);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid rgba(255,159,10,.3);pointer-events:none';
+  el.appendChild(chip);
+
   const popup = new maplibregl.Popup({ offset: 16, closeButton: false, closeOnClick: false })
     .setHTML(popupHtml);
   el.addEventListener('mouseenter', () => popup.addTo(mapInstance));
@@ -2218,6 +2236,7 @@ function addMarker(lngLat, elClass, popupHtml, bounds) {
   const marker = new maplibregl.Marker({ element: el }).setLngLat(lngLat).addTo(mapInstance);
   mapMarkers.push(marker);
   bounds.extend(lngLat);
+  updateLocationLabelVisibility();
 }
 
 function refreshMapMarkers() {
@@ -2233,6 +2252,7 @@ function refreshMapMarkers() {
     addMarker(
       [pt.lng, pt.lat],
       'map-marker' + (pt.type === 'pin' ? ' pin' : ''),
+      pt.label,
       `<strong style="color:var(--accent)">${escHtml(pt.label)}</strong>${pt.sub ? `<br><span style="color:var(--muted);font-size:11px">${escHtml(pt.sub)}</span>` : ''}`,
       bounds
     );
@@ -2243,23 +2263,32 @@ function refreshMapMarkers() {
   for (const u of userLocations) {
     const color = userColor(u.id);
     const isSelf = u.id === DEVICE_ID;
+
     const el = document.createElement('div');
-    el.className = 'map-user-marker';
-    el.style.cssText = `width:14px;height:14px;border-radius:50%;background:${color};box-shadow:0 0 0 3px ${color}44,0 0 14px ${color}88;border:2px solid ${color};position:relative;cursor:pointer`;
+    el.style.cssText = `position:relative;width:32px;height:32px;cursor:pointer`;
+
     if (isSelf) {
       const pulse = document.createElement('div');
-      pulse.style.cssText = `position:absolute;inset:-6px;border-radius:50%;border:2px solid ${color};opacity:.4;animation:map-pulse 2s ease-out infinite`;
+      pulse.style.cssText = `position:absolute;inset:-6px;border-radius:50%;border:2px solid ${color};opacity:.5;animation:map-pulse 2s ease-out infinite`;
       el.appendChild(pulse);
     }
-    const label = document.createElement('div');
-    label.style.cssText = `position:absolute;bottom:18px;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--surface2);color:${color};font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;border:1px solid ${color}44;pointer-events:none`;
-    label.textContent = u.name + (isSelf ? ' (you)' : '');
-    el.appendChild(label);
-    const popup = new maplibregl.Popup({ offset: 18, closeButton: false, closeOnClick: false })
+
+    const avatar = document.createElement('div');
+    avatar.style.cssText = `width:32px;height:32px;border-radius:50%;background:${color}22;border:2px solid ${color};display:flex;align-items:center;justify-content:center;color:${color};box-shadow:0 0 12px ${color}55`;
+    avatar.innerHTML = PERSON_SVG;
+    el.appendChild(avatar);
+
+    const nameChip = document.createElement('div');
+    nameChip.style.cssText = `position:absolute;bottom:38px;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--surface2);color:${color};font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid ${color}44;pointer-events:none`;
+    nameChip.textContent = u.name + (isSelf ? ' ·you' : '');
+    el.appendChild(nameChip);
+
+    const popup = new maplibregl.Popup({ offset: 22, closeButton: false, closeOnClick: false })
       .setHTML(`<strong style="color:${color}">${escHtml(u.name)}${isSelf ? ' <span style="opacity:.5">(you)</span>' : ''}</strong><br><span style="color:var(--muted);font-size:11px">${timeAgo(u.updated_at)}</span>`);
     el.addEventListener('mouseenter', () => popup.addTo(mapInstance));
     el.addEventListener('mouseleave', () => popup.remove());
-    new maplibregl.Marker({ element: el }).setLngLat([u.lng, u.lat]).addTo(mapInstance);
+
+    new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([u.lng, u.lat]).addTo(mapInstance);
     mapMarkers.push({ remove: () => { el.remove(); popup.remove(); } });
     bounds.extend([u.lng, u.lat]);
     count++;
