@@ -922,7 +922,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 141;
+const BUILD = 142;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2682,6 +2682,7 @@ function refreshMapMarkers(adjustViewport = false) {
     nameChip.textContent = chipLabel;
     el.appendChild(nameChip);
 
+    let userPopup = null;
     if (isSelf) {
       const editPopup = document.createElement('div');
       editPopup.style.cssText = `display:none;position:absolute;bottom:42px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px;box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:9999;min-width:170px;pointer-events:auto`;
@@ -2734,7 +2735,6 @@ function refreshMapMarkers(adjustViewport = false) {
       el.addEventListener('mouseleave', () => userPopup.remove());
     }
 
-    let userPopup = null;
     new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([u.lng, u.lat]).addTo(mapInstance);
     mapMarkers.push({ remove: () => { el.remove(); userPopup?.remove(); } });
     bounds.extend([u.lng, u.lat]);
