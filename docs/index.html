@@ -779,7 +779,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 49;
+const BUILD = 50;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1102,11 +1102,10 @@ function renderPinned() {
         ${eyeBtn}${delBtn}
       </div>`;
     } else if (n.icon === 'map-pin') {
-      const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(n.title)}`;
       const label = n.notes || n.title.split(',')[0].trim();
       html += `<div class="pinned-note" data-note-id="${n.id}" style="${opacity}">
         ${drag}
-        <a class="pinned-note-address" href="${mapsUrl}" target="_blank" rel="noopener" onclick="if(isAdmin){return false;}">
+        <a class="pinned-note-address" href="#" onclick="if(!isAdmin){flyToAddress(${JSON.stringify(n.title)});}return false;">
           <i data-lucide="map-pin"></i>${escHtml(label)}
         </a>
         ${eyeBtn}${delBtn}
@@ -1495,7 +1494,6 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
   function locationRowHtml(locStr, lookupKey, displayName = '') {
     locationLookup[lookupKey] = locStr;
     const label = displayName || locStr.split(',')[0].trim();
-    const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(locStr)}`;
     let distHtml = '';
     if (locationEnabled && currentPosition && geocodeCache[locStr]) {
       const c = geocodeCache[locStr];
@@ -1503,7 +1501,7 @@ function eventCardHtml(ev, extraClass = '', showProgress = false, showStartsIn =
       distHtml = `<span class="loc-distance">${formatKm(km)}</span>`;
     }
     return `<div class="card-location-row">
-      <a class="card-location" href="${mapsUrl}" target="_blank" rel="noopener"><i data-lucide="map-pin"></i>${escHtml(label)}</a>
+      <a class="card-location" href="#" onclick="flyToAddress(${JSON.stringify(locStr)});return false;"><i data-lucide="map-pin"></i>${escHtml(label)}</a>
       ${distHtml}
     </div>`;
   }
@@ -2164,9 +2162,9 @@ function collectMapPoints() {
   return points;
 }
 
-window.toggleMap = async () => {
+window.toggleMap = async (forceOpen = false) => {
   const overlay = document.getElementById('mapOverlay');
-  const isOpen = overlay.classList.toggle('open');
+  const isOpen = forceOpen ? (overlay.classList.add('open'), true) : overlay.classList.toggle('open');
   document.getElementById('mapBtn')?.classList.toggle('active', isOpen);
   if (isOpen) { updateMapZoomButtons(); }
   if (!isOpen) {
@@ -2551,6 +2549,20 @@ window.mapZoomNeighbourhood = () => {
     mapInstance.flyTo({ center: lastCityCenter, zoom: 13, duration: 800 });
   } else {
     mapInstance.flyTo({ zoom: 13, duration: 600 });
+  }
+};
+
+window.flyToAddress = async (locStr) => {
+  const cached = geocodeCache[locStr];
+  const coords = (cached && cached !== false) ? cached : null;
+  await toggleMap(true); // open map if not open
+  if (!mapInstance) return;
+  if (coords) {
+    mapInstance.flyTo({ center: [coords.lng, coords.lat], zoom: 17 });
+  } else {
+    // geocode on demand then fly
+    const result = await geocode(locStr);
+    if (result) mapInstance.flyTo({ center: [result.lng, result.lat], zoom: 17 });
   }
 };
 
