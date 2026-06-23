@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Georgia 2026</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/open-location-code@1.0.4/openlocationcode.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <link href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css" rel="stylesheet">
   <script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
@@ -905,7 +906,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 104;
+const BUILD = 105;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2681,8 +2682,37 @@ function formatKm(km) {
   return `${Math.round(km)} km`;
 }
 
+function isPlusCode(s) {
+  // matches full (8FX5WXHP+WP) or compound (8FXP+WP Tbilisi) plus codes
+  return /^[23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]{2,}(\s+.+)?$/i.test(s.trim());
+}
+
+async function geocodePlusCode(locationStr) {
+  const OLC = window.OpenLocationCode;
+  if (!OLC) return null;
+  const str = locationStr.trim();
+  const plusIdx = str.indexOf('+');
+  const codePart = str.slice(0, plusIdx + 3).trim(); // e.g. "8FX5WXHP+WP"
+  const cityPart = str.slice(plusIdx + 3).trim();     // e.g. "Tbilisi, Georgia"
+  try {
+    let fullCode = codePart;
+    if (!OLC.isValid(codePart) || OLC.isShort(codePart)) {
+      if (!cityPart) return null;
+      const ref = await geocode(cityPart);
+      if (!ref) return null;
+      fullCode = OLC.recoverNearest(codePart, ref.lat, ref.lng);
+    }
+    const area = OLC.decode(fullCode);
+    const coords = { lat: area.latitudeCenter, lng: area.longitudeCenter };
+    geocodeCache[locationStr] = coords;
+    try { localStorage.setItem('geocodeCache', JSON.stringify(geocodeCache)); } catch {}
+    return coords;
+  } catch { return null; }
+}
+
 async function geocode(locationStr) {
   if (geocodeCache[locationStr] !== undefined) return geocodeCache[locationStr];
+  if (isPlusCode(locationStr)) return geocodePlusCode(locationStr);
   try {
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationStr)}&format=json&limit=1`;
     const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
