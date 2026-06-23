@@ -779,7 +779,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 46;
+const BUILD = 47;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2216,7 +2216,7 @@ function initMap() {
     attributionControl: false,
   });
   mapInstance.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
-  mapInstance.on('load', refreshMapMarkers);
+  mapInstance.on('load', () => refreshMapMarkers(!localStorage.getItem('mapView')));
   mapInstance.on('move', () => { if (mapInstance.getZoom() >= 13) lastCityCenter = mapInstance.getCenter().toArray(); });
   mapInstance.on('zoom', () => { updateLocChipVisibility(); updateMapZoomButtons(); });
 }
@@ -2302,7 +2302,7 @@ function addMarker(lngLat, elClass, label, distText, popupHtml, bounds) {
   mapMarkers.push(chipMarker);
 }
 
-function refreshMapMarkers() {
+function refreshMapMarkers(adjustViewport = false) {
   if (!mapInstance) return;
   mapMarkers.forEach(m => m.remove());
   mapMarkers = [];
@@ -2374,7 +2374,7 @@ function refreshMapMarkers() {
     count++;
   }
 
-  if (!count) return;
+  if (!adjustViewport || !count) return;
   if (count === 1) {
     const first = [...collectMapPoints(), ...userLocations.map(u => ({ lng: u.lng, lat: u.lat }))][0];
     mapInstance.flyTo({ center: [first.lng, first.lat], zoom: 13 });
