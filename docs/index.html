@@ -919,7 +919,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 139;
+const BUILD = 140;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2725,14 +2725,15 @@ function refreshMapMarkers(adjustViewport = false) {
         }
       });
     } else {
-      const popup = new maplibregl.Popup({ offset: 22, closeButton: false, closeOnClick: false })
+      userPopup = new maplibregl.Popup({ offset: 22, closeButton: false, closeOnClick: false })
         .setHTML(`<strong style="color:${displayColor}">${escHtml(u.name)}</strong><br><span style="color:var(--muted);font-size:11px">${timeAgo(u.updated_at)}</span>`);
-      el.addEventListener('mouseenter', () => popup.addTo(mapInstance));
-      el.addEventListener('mouseleave', () => popup.remove());
+      el.addEventListener('mouseenter', () => userPopup.addTo(mapInstance));
+      el.addEventListener('mouseleave', () => userPopup.remove());
     }
 
+    let userPopup = null;
     new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([u.lng, u.lat]).addTo(mapInstance);
-    mapMarkers.push({ remove: () => { el.remove(); popup.remove(); } });
+    mapMarkers.push({ remove: () => { el.remove(); userPopup?.remove(); } });
     bounds.extend([u.lng, u.lat]);
     count++;
   }
