@@ -951,7 +951,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 148;
+const BUILD = 149;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1508,7 +1508,8 @@ function renderHeader() {
       !p.approved && p.id !== DEVICE_ID &&
       (Date.now() - new Date(p.last_seen_at).getTime()) < 5 * 60 * 1000
     ).length;
-    const observerStr = observers > 0 ? ` · 👁 ${observers} watching` : '';
+    const eyeSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    const observerStr = observers > 0 ? ` · ${eyeSvg}${observers} watching` : '';
     if (!locationEnabled) { geoEl.innerHTML = build + observerStr; geoEl.className = 'geo-status'; }
     else if (geoError) { geoEl.innerHTML = `${build} · ${pinSvg}${escHtml(geoError)}${observerStr}`; geoEl.className = 'geo-status error'; }
     else if (!currentPosition) { geoEl.innerHTML = `${build} · ${pinSvg}Getting location…${observerStr}`; geoEl.className = 'geo-status'; }
