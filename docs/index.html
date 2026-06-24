@@ -951,7 +951,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 152;
+const BUILD = 153;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -3369,8 +3369,14 @@ window.saveMapNameEdit = () => {
   if (!n) return;
   userName = n;
   localStorage.setItem('userName', userName);
-  if (!DEMO_MODE) sb.from('user_locations').update({ name: userName }).eq('id', DEVICE_ID);
-  // Close all popups and re-render markers
+  const selfEntry = userLocations.find(u => u.id === DEVICE_ID);
+  if (selfEntry) selfEntry.name = userName;
+  const selfPart = participantsCache.find(p => p.id === DEVICE_ID);
+  if (selfPart) selfPart.name = userName;
+  if (!DEMO_MODE) {
+    sb.from('user_locations').update({ name: userName }).eq('id', DEVICE_ID);
+    sb.from('participants').update({ name: userName }).eq('id', DEVICE_ID);
+  }
   document.querySelectorAll('.maplibregl-popup').forEach(p => p.remove());
   refreshMapMarkers();
 };
