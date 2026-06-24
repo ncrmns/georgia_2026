@@ -922,7 +922,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 143;
+const BUILD = 145;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2597,7 +2597,8 @@ function addMarker(lngLat, icon, label, distText, popupHtml, bounds, addr) {
   chip.style.cssText = `white-space:nowrap;background:var(--surface2);color:var(--accent);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid rgba(255,159,10,.3);cursor:pointer;user-select:none`;
   chip.textContent = chipText;
   const gmBtn = document.createElement('a');
-  gmBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr || label)}`;
+  const mapsQuery = encodeURIComponent(isPlusCode(addr || '') ? label : (addr || label));
+  gmBtn.href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
   gmBtn.target = '_blank';
   gmBtn.rel = 'noopener';
   gmBtn.style.cssText = `display:none;align-items:center;gap:4px;background:var(--surface2);color:var(--accent);font-size:11px;font-weight:600;padding:3px 8px 3px 5px;border-radius:20px;border:1px solid rgba(255,159,10,.3);text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.4);white-space:nowrap`;
