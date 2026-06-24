@@ -326,6 +326,26 @@
     #mapLocationsPanel > * { pointer-events: auto; }
     .map-admin-only { display: none; }
     .is-admin .map-admin-only { display: flex; }
+    .poli-only { display: none; }
+    .is-poli .poli-only { display: flex; }
+    #usersPanel {
+      position: absolute; top: var(--header-h, 130px); right: 0; bottom: 0; width: 300px; z-index: 10;
+      display: flex; flex-direction: column; transform: translateX(100%);
+      transition: transform .25s ease; pointer-events: none;
+    }
+    #usersPanel.open { transform: translateX(0); }
+    #usersPanel > * { pointer-events: auto; }
+    #usersList { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+    .user-row { display:flex; align-items:center; gap:10px; background:rgba(28,28,30,.45); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:10px 12px; }
+    .user-row-info { flex:1; min-width:0; }
+    .user-row-name { font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .user-row-meta { font-size:11px; color:var(--muted); margin-top:1px; }
+    .user-row-meta.online { color:#34d399; }
+    .user-grace { font-size:10px; color:var(--accent); background:var(--accent-dim); border-radius:4px; padding:1px 5px; margin-left:4px; }
+    .user-approve-btn { font-size:11px; font-weight:700; padding:3px 9px; border-radius:6px; border:1px solid var(--border); background:var(--surface2); color:var(--muted); cursor:pointer; white-space:nowrap; flex-shrink:0; }
+    .user-approve-btn.active { background:var(--accent-dim); color:var(--accent); border-color:var(--accent); }
+    .user-remove-btn { background:none; border:none; color:var(--muted); cursor:pointer; padding:2px; flex-shrink:0; display:flex; align-items:center; }
+    .user-remove-btn svg { width:14px; height:14px; stroke:currentColor; }
     #mapLocList { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; direction: rtl; }
     #mapLocList > * { direction: ltr; }
     .map-loc-row {
@@ -753,6 +773,7 @@
   </div>
   <button class="lock-btn" id="mapLocBtn" onclick="toggleMapLocations()" title="Map locations"><i data-lucide="list"></i></button>
   <button class="lock-btn map-admin-only" id="mapLocEditBtn" onclick="toggleMapLocEdit()" title="Edit locations"><i data-lucide="pencil"></i></button>
+  <button class="lock-btn poli-only" id="usersBtn" onclick="toggleUsersPanel()" title="Manage users"><i data-lucide="users"></i></button>
 </div>
 <!-- Event editor modal -->
 <div id="mapOverlay">
@@ -770,6 +791,12 @@
     </div>
   </div>
   <div id="mapContainer"></div>
+  <div id="usersPanel">
+    <div style="background:rgba(18,18,20,.75);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);flex:1;overflow-y:auto;display:flex;flex-direction:column;border-left:1px solid rgba(255,255,255,.08)">
+      <div style="padding:12px 14px 8px;font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0">Users</div>
+      <div id="usersList" style="padding:10px 12px;display:flex;flex-direction:column;gap:8px;flex:1;overflow-y:auto"></div>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="modalOverlay">
@@ -922,7 +949,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 146;
+const BUILD = 147;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -1475,14 +1502,19 @@ function renderHeader() {
   if (geoEl) {
     const build = `build ${BUILD}`;
     const pinSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
-    if (!locationEnabled) { geoEl.innerHTML = build; geoEl.className = 'geo-status'; }
-    else if (geoError) { geoEl.innerHTML = `${build} · ${pinSvg}${escHtml(geoError)}`; geoEl.className = 'geo-status error'; }
-    else if (!currentPosition) { geoEl.innerHTML = `${build} · ${pinSvg}Getting location…`; geoEl.className = 'geo-status'; }
+    const observers = participantsCache.filter(p =>
+      !p.approved && p.id !== DEVICE_ID &&
+      (Date.now() - new Date(p.last_seen_at).getTime()) < 5 * 60 * 1000
+    ).length;
+    const observerStr = observers > 0 ? ` · 👁 ${observers} watching` : '';
+    if (!locationEnabled) { geoEl.innerHTML = build + observerStr; geoEl.className = 'geo-status'; }
+    else if (geoError) { geoEl.innerHTML = `${build} · ${pinSvg}${escHtml(geoError)}${observerStr}`; geoEl.className = 'geo-status error'; }
+    else if (!currentPosition) { geoEl.innerHTML = `${build} · ${pinSvg}Getting location…${observerStr}`; geoEl.className = 'geo-status'; }
     else {
       const cached = Object.values(locationLookup).filter(l => geocodeCache[l] !== undefined).length;
       const total  = Object.values(locationLookup).length;
       const locStr = cached < total ? `Geocoding ${cached}/${total}…` : `${currentPosition.lat.toFixed(4)}, ${currentPosition.lng.toFixed(4)}`;
-      geoEl.innerHTML = `${build} · ${pinSvg}${locStr}`;
+      geoEl.innerHTML = `${build} · ${pinSvg}${locStr}${observerStr}`;
       geoEl.className = 'geo-status';
     }
   }
@@ -2485,6 +2517,18 @@ window.toggleMap = async (forceOpen = false) => {
       })
       .subscribe();
   }
+  // Realtime subscription for participants
+  if (!DEMO_MODE && !participantsSub) {
+    participantsSub = sb.channel('participants_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, async () => {
+        await loadParticipants();
+        renderHeader();
+        refreshMapMarkers();
+        if (document.getElementById('usersPanel')?.classList.contains('open')) renderUsersPanel();
+      })
+      .subscribe();
+  }
+  updatePoliClass();
 };
 
 function initMap() {
@@ -2514,6 +2558,9 @@ function initMap() {
 let mapMarkers = [];
 let userLocations = [];   // [{id, name, lat, lng, updated_at}]
 let mapRealtimeSub = null;
+let participantsCache = [];
+let participantsSub = null;
+let heartbeatTimer = null;
 
 const USER_COLORS = ['#34c759','#64d2ff','#bf5af2','#ff6b6b','#30d158','#0a84ff'];
 function userColor(id) {
@@ -2523,6 +2570,111 @@ function userColor(id) {
   return USER_COLORS[idx % USER_COLORS.length];
 }
 
+// ── Participants ──────────────────────────────────────────────────────────────
+const isPoli = () => userName === 'Pöli';
+
+function canParticipate() {
+  if (DEMO_MODE) return true;
+  if (isPoli()) return true;
+  const p = participantsCache.find(p => p.id === DEVICE_ID);
+  if (!p) return false;
+  if (p.approved) return true;
+  return (Date.now() - new Date(p.created_at).getTime()) < 60000;
+}
+
+async function loadParticipants() {
+  if (DEMO_MODE) return;
+  const { data } = await sb.from('participants').select('*').order('last_seen_at', { ascending: false });
+  if (data) participantsCache = data;
+}
+
+async function upsertParticipant() {
+  if (DEMO_MODE || !userName) return;
+  const { error } = await sb.from('participants').insert({ id: DEVICE_ID, name: userName, approved: false });
+  if (error) {
+    // Already exists — update name and last_seen
+    await sb.from('participants').update({ name: userName, last_seen_at: new Date().toISOString() }).eq('id', DEVICE_ID);
+  }
+  await loadParticipants();
+  updatePoliClass();
+}
+
+async function participantHeartbeat() {
+  if (DEMO_MODE || !userName) return;
+  await sb.from('participants').update({ last_seen_at: new Date().toISOString() }).eq('id', DEVICE_ID);
+  await loadParticipants();
+  renderHeader();
+  if (document.getElementById('usersPanel')?.classList.contains('open')) renderUsersPanel();
+  // Cut off location if grace period expired and not approved
+  if (!canParticipate() && locationEnabled) {
+    locationEnabled = false;
+    localStorage.removeItem('locationEnabled');
+    if (geoWatchId !== null) { clearInterval(geoWatchId); geoWatchId = null; }
+    document.getElementById('navBtn')?.classList.remove('active');
+    document.getElementById('mapNavBtn')?.classList.remove('active');
+    render();
+  }
+}
+
+function startHeartbeat() {
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(participantHeartbeat, 30000);
+}
+
+function updatePoliClass() {
+  document.getElementById('mapOverlay')?.classList.toggle('is-poli', isPoli());
+  document.getElementById('mapControls')?.classList.toggle('is-poli', isPoli());
+}
+
+window.toggleUsersPanel = () => {
+  const panel = document.getElementById('usersPanel');
+  const isOpen = panel.classList.toggle('open');
+  document.getElementById('usersBtn')?.classList.toggle('active', isOpen);
+  if (isOpen) renderUsersPanel();
+};
+
+function renderUsersPanel() {
+  const list = document.getElementById('usersList');
+  if (!list) return;
+  const now = Date.now();
+  if (!participantsCache.length) {
+    list.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px">No users yet.</div>';
+    return;
+  }
+  list.innerHTML = participantsCache.map(p => {
+    const isOnline = (now - new Date(p.last_seen_at).getTime()) < 5 * 60 * 1000;
+    const inGrace  = !p.approved && (now - new Date(p.created_at).getTime()) < 60000;
+    const isSelf   = p.id === DEVICE_ID;
+    return `<div class="user-row">
+      <div class="user-row-info">
+        <div class="user-row-name">${escHtml(p.name)}${isSelf ? ' <span style="opacity:.45;font-weight:400">(you)</span>' : ''}</div>
+        <div class="user-row-meta${isOnline ? ' online' : ''}">${isOnline ? 'Online now' : timeAgo(p.last_seen_at)}${inGrace ? '<span class="user-grace">trial</span>' : ''}</div>
+      </div>
+      <button class="user-approve-btn${p.approved ? ' active' : ''}" onclick="toggleParticipant('${p.id}')">${p.approved ? 'Active' : 'Pending'}</button>
+      <button class="user-remove-btn" onclick="removeParticipant('${p.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>`;
+  }).join('');
+}
+
+window.toggleParticipant = async (id) => {
+  const p = participantsCache.find(p => p.id === id);
+  if (!p) return;
+  p.approved = !p.approved;
+  renderUsersPanel();
+  refreshMapMarkers();
+  if (!DEMO_MODE) await sb.from('participants').update({ approved: p.approved }).eq('id', id);
+};
+
+window.removeParticipant = async (id) => {
+  participantsCache = participantsCache.filter(p => p.id !== id);
+  renderUsersPanel();
+  refreshMapMarkers();
+  if (!DEMO_MODE) {
+    await sb.from('participants').delete().eq('id', id);
+    await sb.from('user_locations').delete().eq('id', id);
+  }
+};
+
 async function fetchUserLocations() {
   if (DEMO_MODE) return;
   const { data } = await sb.from('user_locations').select('*');
@@ -2530,7 +2682,7 @@ async function fetchUserLocations() {
 }
 
 async function pushUserLocation(lat, lng) {
-  if (DEMO_MODE || !userName) return;
+  if (DEMO_MODE || !userName || !canParticipate()) return;
   await sb.from('user_locations').upsert({
     id: DEVICE_ID, name: userName, lat, lng,
     updated_at: new Date().toISOString(),
@@ -2655,11 +2807,21 @@ function refreshMapMarkers(adjustViewport = false) {
   // Build list of user entries to render; ensure self is always included if position is known
   const selfInDb = userLocations.find(u => u.id === DEVICE_ID);
   const presenceList = [...userLocations];
-  if (!selfInDb && currentPosition && userName) {
+  if (!selfInDb && currentPosition && userName && canParticipate()) {
     presenceList.push({ id: DEVICE_ID, name: userName, lat: currentPosition.lat, lng: currentPosition.lng, updated_at: new Date().toISOString() });
   }
 
-  for (const u of presenceList) {
+  // Only render users who are approved or within 1-min grace period
+  const now = Date.now();
+  const visiblePresence = presenceList.filter(u => {
+    if (u.id === DEVICE_ID) return canParticipate();
+    const p = participantsCache.find(p => p.id === u.id);
+    if (!p) return false;
+    if (p.approved) return true;
+    return (now - new Date(p.created_at).getTime()) < 60000;
+  });
+
+  for (const u of visiblePresence) {
     const isSelf = u.id === DEVICE_ID;
     const staleMs = Date.now() - new Date(u.updated_at).getTime();
     if (!isSelf && staleMs > 60 * 60 * 1000) continue;
@@ -3251,6 +3413,13 @@ window.toggleGlobalLocation = async () => {
     if (!n?.trim()) return;
     userName = n.trim();
     localStorage.setItem('userName', userName);
+    await upsertParticipant();
+    updatePoliClass();
+    startHeartbeat();
+  }
+  if (!canParticipate()) {
+    alert('Your name has been registered. Pöli needs to approve you before your location is shared.');
+    return;
   }
   locationEnabled = true;
   localStorage.setItem('locationEnabled', '1');
@@ -3316,6 +3485,17 @@ function updateHeaderHeight() {
 }
 updateHeaderHeight();
 window.addEventListener('resize', updateHeaderHeight);
+// Bootstrap participants
+(async () => {
+  await loadParticipants();
+  if (userName) {
+    await upsertParticipant();
+    updatePoliClass();
+    startHeartbeat();
+  }
+  renderHeader();
+})();
+
 if (localStorage.getItem('locationEnabled') && userName) toggleGlobalLocation();
 if (localStorage.getItem('mapOpen')) toggleMap();
 </script>
