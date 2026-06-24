@@ -951,7 +951,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 155;
+const BUILD = 156;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2642,6 +2642,7 @@ window.toggleUsersPanel = () => {
     usersPollTimer = setInterval(async () => {
       await loadParticipants();
       renderUsersPanel();
+      refreshMapMarkers();
     }, 5000);
   } else {
     clearInterval(usersPollTimer);
@@ -2675,20 +2676,20 @@ function renderUsersPanel() {
 window.toggleParticipant = async (id) => {
   const p = participantsCache.find(p => p.id === id);
   if (!p) return;
-  p.approved = !p.approved;
+  if (!DEMO_MODE) await sb.from('participants').update({ approved: !p.approved }).eq('id', id);
+  await loadParticipants();
   renderUsersPanel();
   refreshMapMarkers();
-  if (!DEMO_MODE) await sb.from('participants').update({ approved: p.approved }).eq('id', id);
 };
 
 window.removeParticipant = async (id) => {
-  participantsCache = participantsCache.filter(p => p.id !== id);
-  renderUsersPanel();
-  refreshMapMarkers();
   if (!DEMO_MODE) {
     await sb.from('participants').delete().eq('id', id);
     await sb.from('user_locations').delete().eq('id', id);
   }
+  await Promise.all([loadParticipants(), fetchUserLocations()]);
+  renderUsersPanel();
+  refreshMapMarkers();
 };
 
 async function fetchUserLocations() {
@@ -2877,23 +2878,23 @@ function refreshMapMarkers(adjustViewport = false) {
           <button class="map-name-save-btn" style="background:var(--accent);border:none;color:#000;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer">Save</button>
         </div>`;
       el.appendChild(editPopup);
-      editPopup.querySelector('.map-name-save-btn').addEventListener('click', (e) => {
+      editPopup.querySelector('.map-name-save-btn').addEventListener('click', async (e) => {
         e.stopPropagation();
         const n = editPopup.querySelector('.map-name-edit-input').value.trim();
         if (!n) return;
         userName = n;
         localStorage.setItem('userName', userName);
-        const selfEntry = userLocations.find(u => u.id === DEVICE_ID);
-        if (selfEntry) selfEntry.name = userName;
-        const selfPart = participantsCache.find(p => p.id === DEVICE_ID);
-        if (selfPart) selfPart.name = userName;
-        if (!DEMO_MODE) {
-          sb.from('user_locations').update({ name: userName }).eq('id', DEVICE_ID);
-          sb.from('participants').update({ name: userName }).eq('id', DEVICE_ID);
-        }
         editPopup.querySelector('.map-name-edit-input').blur();
         editPopup.style.display = 'none';
+        if (!DEMO_MODE) {
+          await Promise.all([
+            sb.from('user_locations').update({ name: userName }).eq('id', DEVICE_ID),
+            sb.from('participants').update({ name: userName }).eq('id', DEVICE_ID),
+          ]);
+          await Promise.all([fetchUserLocations(), loadParticipants()]);
+        }
         refreshMapMarkers();
+        if (document.getElementById('usersPanel')?.classList.contains('open')) renderUsersPanel();
         const doResize = () => {
           window.scrollTo(0, 0);
           if (mapInstance) mapInstance.resize();
