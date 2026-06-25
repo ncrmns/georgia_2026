@@ -951,7 +951,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_0nOJWgXzRxtHwCC7vTEB_w_VR303qIy';
 const TRIP_ID           = 1;           // fixed row id in the trips table
 const ADMIN_PASSWORD    = 'georgia26'; // change this to something only you know
 
-const BUILD = 156;
+const BUILD = 157;
 const MAPTILER_KEY = '8KjF2KoH6JdnsHXv4f8v';
 const DEMO_MODE = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
@@ -2659,13 +2659,16 @@ function renderUsersPanel() {
     return;
   }
   list.innerHTML = participantsCache.map(p => {
-    const isOnline = (now - new Date(p.last_seen_at).getTime()) < 5 * 60 * 1000;
+    const seenMs  = now - new Date(p.last_seen_at).getTime();
+    const isOnline = seenMs < 5 * 60 * 1000;
     const inGrace  = !p.approved && (now - new Date(p.created_at).getTime()) < 60000;
     const isSelf   = p.id === DEVICE_ID;
+    const dotColor = seenMs < 60000 ? '#4ade80' : seenMs < 5*60000 ? 'var(--accent)' : 'var(--muted)';
+    const dot = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${dotColor};margin-right:5px;flex-shrink:0;vertical-align:middle"></span>`;
     return `<div class="user-row">
       <div class="user-row-info">
         <div class="user-row-name">${escHtml(p.name)}${isSelf ? ' <span style="opacity:.45;font-weight:400">(you)</span>' : ''}</div>
-        <div class="user-row-meta${isOnline ? ' online' : ''}">${isOnline ? 'Online now' : timeAgo(p.last_seen_at)}${inGrace ? '<span class="user-grace">trial</span>' : ''}</div>
+        <div class="user-row-meta${isOnline ? ' online' : ''}">${dot}${timeAgo(p.last_seen_at)}${inGrace ? '<span class="user-grace">trial</span>' : ''}</div>
       </div>
       <button class="user-approve-btn${p.approved ? ' active' : ''}" onclick="toggleParticipant('${p.id}')">${p.approved ? 'Active' : 'Pending'}</button>
       <button class="user-remove-btn" onclick="removeParticipant('${p.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
